@@ -1,11 +1,12 @@
 :root {
-  --page: #090f1e;
+  --page-background: #090f1e;
   --panel: #111a31;
-  --panel-dark: #0d1529;
+  --dark-panel: #0d1529;
   --line: rgba(255, 255, 255, 0.1);
   --text: #f5f7ff;
   --muted: #7f8ba7;
   --accent: #9bf6b0;
+  --danger: #ff8d9e;
 }
 
 * {
@@ -34,7 +35,7 @@ body {
       #273963,
       transparent 36%
     ),
-    var(--page);
+    var(--page-background);
 
   font-family: Arial, sans-serif;
 }
@@ -58,12 +59,13 @@ button,
 
   font-size: 12px;
   font-weight: 700;
+
   cursor: pointer;
 }
 
 button:hover,
 .file-button:hover {
-  border-color: rgba(155, 246, 176, 0.47);
+  border-color: rgba(155, 246, 176, 0.5);
 }
 
 .primary {
@@ -73,24 +75,25 @@ button:hover,
 }
 
 .danger {
-  color: #ff8d9e;
+  color: var(--danger);
 }
 
 .topbar {
   min-height: 76px;
   padding: 14px 24px;
 
+  position: sticky;
+  top: 0;
+  z-index: 20;
+
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
 
-  position: sticky;
-  top: 0;
-  z-index: 20;
-
   border-bottom: 1px solid var(--line);
-  background: rgba(9, 16, 30, 0.91);
+
+  background: rgba(9, 16, 30, 0.92);
   backdrop-filter: blur(12px);
 }
 
@@ -108,8 +111,10 @@ button:hover,
   place-items: center;
 
   border-radius: 10px;
+
   color: #101827;
   background: var(--accent);
+
   font-size: 20px;
 }
 
@@ -122,6 +127,7 @@ button:hover,
 .brand small {
   display: block;
   margin-top: 4px;
+
   color: var(--muted);
   font-size: 10px;
 }
@@ -142,6 +148,7 @@ button:hover,
 .file-button input {
   position: absolute;
   inset: 0;
+
   opacity: 0;
   cursor: pointer;
 }
@@ -184,6 +191,7 @@ button:hover,
   margin: auto;
 
   display: grid;
+
   grid-template-columns:
     240px
     minmax(440px, 1fr)
@@ -195,15 +203,15 @@ button:hover,
 }
 
 /*
-  У колонок нет фиксированной высоты.
-  Поэтому при добавлении ответов вся страница
-  становится длиннее и нормально прокручивается.
+  У редактора нет фиксированной высоты.
+  При добавлении ответов вся страница
+  увеличивается и нормально прокручивается.
 */
 
 .scenes-panel,
 .preview-panel {
   padding: 22px 15px;
-  background: var(--panel-dark);
+  background: var(--dark-panel);
 }
 
 .scenes-panel {
@@ -229,6 +237,7 @@ button:hover,
 .preview-panel > small,
 label {
   color: var(--muted);
+
   font-size: 9px;
   font-weight: 900;
   letter-spacing: 0.13em;
@@ -254,17 +263,23 @@ label {
   width: 100%;
 
   display: grid;
-  grid-template-columns: 25px 1fr auto;
+
+  grid-template-columns:
+    25px
+    minmax(0, 1fr)
+    auto;
+
   align-items: center;
   gap: 8px;
 
   border-color: transparent;
   background: transparent;
+
   text-align: left;
 }
 
 .scene-card.active {
-  border-color: rgba(155, 246, 176, 0.33);
+  border-color: rgba(155, 246, 176, 0.35);
   background: rgba(155, 246, 176, 0.06);
 }
 
@@ -276,6 +291,7 @@ label {
 .scene-card b,
 .scene-card small {
   display: block;
+
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -287,13 +303,15 @@ label {
 
 .scene-card small {
   margin-top: 4px;
+
   color: var(--muted);
   font-size: 9px;
 }
 
-.editor {
+.editor-panel {
   min-width: 0;
-  padding: 27px 30px 80px;
+  padding: 27px 30px 100px;
+
   background: var(--panel);
 }
 
@@ -309,6 +327,7 @@ label {
 .editor-actions {
   display: flex;
   gap: 7px;
+  flex-wrap: wrap;
 }
 
 label {
@@ -328,7 +347,7 @@ select {
   outline: 0;
 
   color: #fff;
-  background: var(--panel-dark);
+  background: var(--dark-panel);
 
   font-size: 12px;
 }
@@ -336,7 +355,7 @@ select {
 input:focus,
 textarea:focus,
 select:focus {
-  border-color: rgba(155, 246, 176, 0.53);
+  border-color: rgba(155, 246, 176, 0.55);
 }
 
 textarea {
@@ -346,8 +365,40 @@ textarea {
 
 .two-columns {
   display: grid;
-  grid-template-columns: 130px 1fr;
+  grid-template-columns: 140px minmax(0, 1fr);
   gap: 8px;
+}
+
+.media-status {
+  min-height: 17px;
+  margin: -12px 0 10px;
+
+  color: var(--muted);
+
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.media-status.success {
+  color: var(--accent);
+}
+
+.media-status.error {
+  color: #ff9aaa;
+}
+
+.media-preview img,
+.media-preview video {
+  display: block;
+
+  width: 100%;
+  max-height: 250px;
+  margin: 0 0 22px;
+
+  border-radius: 10px;
+
+  background: #070b15;
+  object-fit: cover;
 }
 
 .answers-heading {
@@ -357,6 +408,7 @@ textarea {
 
 .answers-heading p {
   margin: 5px 0 0;
+
   color: var(--muted);
   font-size: 10px;
 }
@@ -372,7 +424,7 @@ textarea {
   border: 1px solid var(--line);
   border-radius: 10px;
 
-  background: var(--panel-dark);
+  background: var(--dark-panel);
 }
 
 .answer-top {
@@ -391,19 +443,20 @@ textarea {
 .answer-top button {
   padding: 5px;
   border: 0;
-  color: #ff8d9e;
+
+  color: var(--danger);
   background: transparent;
 }
 
 .answer-grid {
   display: grid;
-  grid-template-columns: 60px 1fr;
+  grid-template-columns: 70px minmax(0, 1fr);
   gap: 8px;
 }
 
 .transition-grid {
   display: grid;
-  grid-template-columns: 140px 1fr;
+  grid-template-columns: 150px minmax(0, 1fr);
   gap: 8px;
 }
 
@@ -411,7 +464,7 @@ textarea {
   margin-bottom: 12px;
 }
 
-.settings {
+.settings-panel {
   margin-top: 30px;
   padding: 18px;
 
@@ -421,12 +474,14 @@ textarea {
   background: rgba(255, 255, 255, 0.02);
 }
 
-.settings h2 {
-  margin: 0 0 18px;
+.settings-panel h2 {
+  margin: 0 0 8px;
   font-size: 17px;
 }
 
 .settings-grid {
+  margin-top: 18px;
+
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0 12px;
@@ -436,7 +491,7 @@ textarea {
   grid-column: 1 / -1;
 }
 
-.transparent-option {
+.checkbox-label {
   padding: 12px;
 
   display: flex;
@@ -447,26 +502,49 @@ textarea {
   border-radius: 8px;
 
   color: #dce2f2;
-  background: var(--panel-dark);
+  background: var(--dark-panel);
 
   font-size: 11px;
   letter-spacing: 0;
+
   cursor: pointer;
 }
 
-.transparent-option input {
+.checkbox-label input {
   width: 18px;
   height: 18px;
   margin: 0;
   padding: 0;
+
   accent-color: var(--accent);
 }
 
 .hint {
   margin: 0;
+
   color: var(--muted);
+
   font-size: 10px;
   line-height: 1.5;
+}
+
+.iframe-actions {
+  margin: 17px 0 5px;
+
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.iframe-panel textarea {
+  min-height: 145px;
+
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+}
+
+.iframe-panel .media-status {
+  margin-top: 5px;
 }
 
 .preview-panel h2 {
@@ -487,7 +565,8 @@ textarea {
   background-size: cover;
   background-position: center;
 
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.4);
 
   font-family:
     var(--player-font, Arial, sans-serif);
@@ -521,14 +600,9 @@ textarea {
     linear-gradient(
       180deg,
       rgba(7, 16, 29, 0.08),
-      rgba(7, 16, 29, 0.91) 84%
+      rgba(7, 16, 29, 0.92) 84%
     );
 }
-
-/*
-  Если фон прозрачный и в сцене нет медиа,
-  затемняющий градиент тоже убирается.
-*/
 
 .player.transparent:not(.has-media)
 .player-overlay {
@@ -538,6 +612,7 @@ textarea {
 .player-top {
   display: flex;
   justify-content: space-between;
+  gap: 15px;
 
   font-size: 8px;
   font-weight: 800;
@@ -547,6 +622,7 @@ textarea {
 
 .scene-label {
   color: var(--player-accent, var(--accent));
+
   font-size: 9px;
   font-weight: 900;
   letter-spacing: 0.13em;
@@ -555,8 +631,13 @@ textarea {
 
 .player h3 {
   margin: 8px 0 17px;
+
   font-size: 24px;
   line-height: 1.08;
+}
+
+.player p {
+  line-height: 1.55;
 }
 
 .player-answers {
@@ -575,14 +656,15 @@ textarea {
   border: 1px solid rgba(255, 255, 255, 0.2);
 
   color: #fff;
-  background: rgba(17, 24, 39, 0.72);
+  background: rgba(17, 24, 39, 0.74);
 
   text-align: left;
 }
 
 .player-answer:hover {
   color: #101827;
-  background: var(--player-accent, var(--accent));
+  background:
+    var(--player-accent, var(--accent));
 }
 
 .shape-soft {
@@ -597,11 +679,6 @@ textarea {
   border-radius: 3px;
 }
 
-/*
-  Полноэкранное окно имеет собственный
-  вертикальный скролл.
-*/
-
 .modal {
   display: none;
 
@@ -614,7 +691,7 @@ textarea {
   overflow-x: hidden;
   overflow-y: auto;
 
-  background: rgba(3, 7, 17, 0.93);
+  background: rgba(3, 7, 17, 0.94);
 }
 
 .modal.open {
@@ -633,7 +710,7 @@ textarea {
 }
 
 .full-player {
-  width: min(850px, 100%);
+  width: min(900px, 100%);
   min-height: calc(100vh - 110px);
   margin: auto;
 }
@@ -653,6 +730,7 @@ textarea {
   z-index: 100;
 
   padding: 10px 16px;
+
   border-radius: 999px;
 
   color: #101827;
@@ -694,11 +772,11 @@ textarea {
   }
 
   .scene-card {
-    min-width: 185px;
+    min-width: 190px;
   }
 
-  .editor {
-    padding: 20px 15px 80px;
+  .editor-panel {
+    padding: 20px 15px 100px;
   }
 
   .editor-heading {
