@@ -1,0 +1,721 @@
+:root {
+  --page: #090f1e;
+  --panel: #111a31;
+  --panel-dark: #0d1529;
+  --line: rgba(255, 255, 255, 0.1);
+  --text: #f5f7ff;
+  --muted: #7f8ba7;
+  --accent: #9bf6b0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  overflow-y: scroll;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100%;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  color: var(--text);
+
+  background:
+    radial-gradient(
+      circle at 75% 0,
+      #273963,
+      transparent 36%
+    ),
+    var(--page);
+
+  font-family: Arial, sans-serif;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button,
+.file-button {
+  padding: 9px 12px;
+
+  border: 1px solid var(--line);
+  border-radius: 8px;
+
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:hover,
+.file-button:hover {
+  border-color: rgba(155, 246, 176, 0.47);
+}
+
+.primary {
+  color: #101827;
+  background: var(--accent);
+  border-color: transparent;
+}
+
+.danger {
+  color: #ff8d9e;
+}
+
+.topbar {
+  min-height: 76px;
+  padding: 14px 24px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  position: sticky;
+  top: 0;
+  z-index: 20;
+
+  border-bottom: 1px solid var(--line);
+  background: rgba(9, 16, 30, 0.91);
+  backdrop-filter: blur(12px);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.brand-icon {
+  width: 35px;
+  height: 35px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 10px;
+  color: #101827;
+  background: var(--accent);
+  font-size: 20px;
+}
+
+.brand strong {
+  display: block;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+
+.brand small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.file-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.file-button input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.titlebar {
+  min-height: 78px;
+  padding: 17px 27px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  border-bottom: 1px solid var(--line);
+}
+
+.titlebar input {
+  width: min(520px, 70vw);
+  padding: 0;
+  margin: 0;
+
+  border: 0;
+  outline: 0;
+
+  color: #fff;
+  background: transparent;
+
+  font-size: 25px;
+  font-weight: 900;
+}
+
+.titlebar span {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.workspace {
+  width: min(1500px, 100%);
+  min-height: calc(100vh - 154px);
+  margin: auto;
+
+  display: grid;
+  grid-template-columns:
+    240px
+    minmax(440px, 1fr)
+    330px;
+
+  align-items: stretch;
+
+  border-inline: 1px solid var(--line);
+}
+
+/*
+  У колонок нет фиксированной высоты.
+  Поэтому при добавлении ответов вся страница
+  становится длиннее и нормально прокручивается.
+*/
+
+.scenes-panel,
+.preview-panel {
+  padding: 22px 15px;
+  background: var(--panel-dark);
+}
+
+.scenes-panel {
+  border-right: 1px solid var(--line);
+}
+
+.preview-panel {
+  border-left: 1px solid var(--line);
+}
+
+.section-heading,
+.editor-heading,
+.answers-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.section-heading small,
+.editor-heading small,
+.answers-heading small,
+.preview-panel > small,
+label {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+}
+
+.section-heading h2,
+.preview-panel h2 {
+  margin: 6px 0 17px;
+  font-size: 19px;
+}
+
+.section-heading button {
+  padding: 5px 9px;
+  font-size: 18px;
+}
+
+.scene-list {
+  display: grid;
+  gap: 6px;
+}
+
+.scene-card {
+  width: 100%;
+
+  display: grid;
+  grid-template-columns: 25px 1fr auto;
+  align-items: center;
+  gap: 8px;
+
+  border-color: transparent;
+  background: transparent;
+  text-align: left;
+}
+
+.scene-card.active {
+  border-color: rgba(155, 246, 176, 0.33);
+  background: rgba(155, 246, 176, 0.06);
+}
+
+.scene-card .number,
+.scene-card .star {
+  color: var(--accent);
+}
+
+.scene-card b,
+.scene-card small {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.scene-card b {
+  font-size: 11px;
+}
+
+.scene-card small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.editor {
+  min-width: 0;
+  padding: 27px 30px 80px;
+  background: var(--panel);
+}
+
+.editor-heading {
+  margin-bottom: 25px;
+}
+
+.editor-heading h1 {
+  margin: 6px 0 0;
+  font-size: 23px;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 7px;
+}
+
+label {
+  display: block;
+  margin-bottom: 21px;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  margin-top: 8px;
+  padding: 11px;
+
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  outline: 0;
+
+  color: #fff;
+  background: var(--panel-dark);
+
+  font-size: 12px;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: rgba(155, 246, 176, 0.53);
+}
+
+textarea {
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.two-columns {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  gap: 8px;
+}
+
+.answers-heading {
+  align-items: center;
+  margin: 30px 0 13px;
+}
+
+.answers-heading p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.answer-list {
+  display: grid;
+  gap: 10px;
+}
+
+.answer-card {
+  padding: 15px;
+
+  border: 1px solid var(--line);
+  border-radius: 10px;
+
+  background: var(--panel-dark);
+}
+
+.answer-top {
+  margin-bottom: 10px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.answer-top b {
+  color: var(--accent);
+  font-size: 10px;
+}
+
+.answer-top button {
+  padding: 5px;
+  border: 0;
+  color: #ff8d9e;
+  background: transparent;
+}
+
+.answer-grid {
+  display: grid;
+  grid-template-columns: 60px 1fr;
+  gap: 8px;
+}
+
+.transition-grid {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 8px;
+}
+
+.answer-card label {
+  margin-bottom: 12px;
+}
+
+.settings {
+  margin-top: 30px;
+  padding: 18px;
+
+  border: 1px solid var(--line);
+  border-radius: 10px;
+
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.settings h2 {
+  margin: 0 0 18px;
+  font-size: 17px;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 12px;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.transparent-option {
+  padding: 12px;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  border: 1px solid var(--line);
+  border-radius: 8px;
+
+  color: #dce2f2;
+  background: var(--panel-dark);
+
+  font-size: 11px;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+
+.transparent-option input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--accent);
+}
+
+.hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.preview-panel h2 {
+  margin-top: 6px;
+}
+
+.player {
+  min-height: 480px;
+  position: relative;
+  overflow: hidden;
+
+  border: 1px solid var(--line);
+  border-radius: 15px;
+
+  background-color:
+    var(--player-background, #111a31);
+
+  background-size: cover;
+  background-position: center;
+
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+
+  font-family:
+    var(--player-font, Arial, sans-serif);
+}
+
+.player.transparent {
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.player video {
+  width: 100%;
+  height: 100%;
+
+  position: absolute;
+  inset: 0;
+
+  object-fit: cover;
+}
+
+.player-overlay {
+  position: absolute;
+  inset: 0;
+  padding: 18px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(7, 16, 29, 0.08),
+      rgba(7, 16, 29, 0.91) 84%
+    );
+}
+
+/*
+  Если фон прозрачный и в сцене нет медиа,
+  затемняющий градиент тоже убирается.
+*/
+
+.player.transparent:not(.has-media)
+.player-overlay {
+  background: transparent;
+}
+
+.player-top {
+  display: flex;
+  justify-content: space-between;
+
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.scene-label {
+  color: var(--player-accent, var(--accent));
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.player h3 {
+  margin: 8px 0 17px;
+  font-size: 24px;
+  line-height: 1.08;
+}
+
+.player-answers {
+  display: grid;
+  gap: 7px;
+}
+
+.player-answer {
+  width: 100%;
+  padding: 11px;
+
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  border: 1px solid rgba(255, 255, 255, 0.2);
+
+  color: #fff;
+  background: rgba(17, 24, 39, 0.72);
+
+  text-align: left;
+}
+
+.player-answer:hover {
+  color: #101827;
+  background: var(--player-accent, var(--accent));
+}
+
+.shape-soft {
+  border-radius: 12px;
+}
+
+.shape-round {
+  border-radius: 999px;
+}
+
+.shape-square {
+  border-radius: 3px;
+}
+
+/*
+  Полноэкранное окно имеет собственный
+  вертикальный скролл.
+*/
+
+.modal {
+  display: none;
+
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+
+  padding: 70px 20px 40px;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  background: rgba(3, 7, 17, 0.93);
+}
+
+.modal.open {
+  display: block;
+}
+
+.modal.transparent-mode {
+  background: transparent;
+}
+
+.close-button {
+  position: fixed;
+  top: 17px;
+  right: 20px;
+  z-index: 51;
+}
+
+.full-player {
+  width: min(850px, 100%);
+  min-height: calc(100vh - 110px);
+  margin: auto;
+}
+
+.full-player .player {
+  min-height: calc(100vh - 110px);
+}
+
+.full-player .player h3 {
+  font-size: clamp(30px, 5vw, 58px);
+}
+
+.toast {
+  position: fixed;
+  top: 88px;
+  left: 50%;
+  z-index: 100;
+
+  padding: 10px 16px;
+  border-radius: 999px;
+
+  color: #101827;
+  background: var(--accent);
+
+  font-size: 12px;
+  font-weight: 900;
+
+  transform: translateX(-50%);
+}
+
+@media (max-width: 1080px) {
+  .workspace {
+    grid-template-columns:
+      220px
+      minmax(0, 1fr);
+  }
+
+  .preview-panel {
+    display: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .topbar,
+  .titlebar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .workspace {
+    display: block;
+  }
+
+  .scene-list {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 5px;
+  }
+
+  .scene-card {
+    min-width: 185px;
+  }
+
+  .editor {
+    padding: 20px 15px 80px;
+  }
+
+  .editor-heading {
+    flex-direction: column;
+  }
+
+  .settings-grid,
+  .transition-grid,
+  .two-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .wide {
+    grid-column: auto;
+  }
+
+  .modal {
+    padding-inline: 10px;
+  }
+}
