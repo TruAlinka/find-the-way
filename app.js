@@ -1,7 +1,9 @@
 "use strict";
 
-const STORAGE_KEY = "branchway-project-v4";
-const $ = selector => document.querySelector(selector);
+const STORAGE_KEY = "branchway-project-v6";
+
+const $ = selector =>
+  document.querySelector(selector);
 
 function createId(prefix) {
   return (
@@ -9,14 +11,15 @@ function createId(prefix) {
     "-" +
     Date.now().toString(36) +
     "-" +
-    Math.random().toString(36).slice(2, 6)
+    Math.random().toString(36).slice(2, 7)
   );
 }
 
 function createDefaultProject() {
   return {
-    version: 4,
+    version: 6,
     title: "Lost in London",
+    language: "ru",
     startSceneId: "scene-1",
 
     theme: {
@@ -26,6 +29,14 @@ function createDefaultProject() {
       shape: "soft",
       backgroundImage: "",
       transparent: false
+    },
+
+    feedback: {
+      title: "Great work!",
+      text:
+        "You completed the adventure successfully.",
+      restartText: "Play again",
+      image: ""
     },
 
     scenes: [
@@ -38,6 +49,7 @@ function createDefaultProject() {
 
         media: {
           type: "image",
+
           url:
             "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1200&q=80"
         },
@@ -47,6 +59,7 @@ function createDefaultProject() {
             id: "answer-1",
             text: "Turn left",
             icon: "←",
+            action: "scene",
             nextSceneId: "scene-2",
 
             transition: {
@@ -59,6 +72,7 @@ function createDefaultProject() {
             id: "answer-2",
             text: "Turn right",
             icon: "→",
+            action: "scene",
             nextSceneId: "scene-3",
 
             transition: {
@@ -72,7 +86,9 @@ function createDefaultProject() {
       {
         id: "scene-2",
         title: "The station",
-        task: "Great! You found the station.",
+
+        task:
+          "Great! You found the station.",
 
         media: {
           type: "none",
@@ -82,9 +98,10 @@ function createDefaultProject() {
         answers: [
           {
             id: "answer-3",
-            text: "Play again",
-            icon: "✦",
-            nextSceneId: "scene-1",
+            text: "Finish",
+            icon: "✓",
+            action: "finish",
+            nextSceneId: "__finish__",
 
             transition: {
               type: "none",
@@ -97,7 +114,9 @@ function createDefaultProject() {
       {
         id: "scene-3",
         title: "A wrong turn",
-        task: "This street is a dead end. Go back.",
+
+        task:
+          "This street is a dead end. Go back.",
 
         media: {
           type: "none",
@@ -109,6 +128,7 @@ function createDefaultProject() {
             id: "answer-4",
             text: "Go back",
             icon: "↩",
+            action: "scene",
             nextSceneId: "scene-1",
 
             transition: {
@@ -138,8 +158,17 @@ function normalizeProject(project) {
     ...(project.theme || {})
   };
 
+  project.feedback = {
+    ...defaults.feedback,
+    ...(project.feedback || {})
+  };
+
+  project.language =
+    project.language || "ru";
+
   project.startSceneId =
-    project.startSceneId || project.scenes[0].id;
+    project.startSceneId ||
+    project.scenes[0].id;
 
   project.scenes.forEach(scene => {
     scene.media = scene.media || {
@@ -156,6 +185,7 @@ function normalizeProject(project) {
           id: createId("answer"),
           text: "Продолжить",
           icon: "→",
+          action: "scene",
           nextSceneId: project.startSceneId,
 
           transition: {
@@ -172,6 +202,14 @@ function normalizeProject(project) {
         answer.next ||
         project.startSceneId;
 
+      answer.action =
+        answer.action ||
+        (
+          answer.nextSceneId === "__finish__"
+            ? "finish"
+            : "scene"
+        );
+
       answer.transition =
         answer.transition ||
         answer.transitionMedia || {
@@ -186,13 +224,12 @@ function normalizeProject(project) {
 
 function loadProject() {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved =
+      localStorage.getItem(STORAGE_KEY);
 
-    if (!saved) {
-      return createDefaultProject();
-    }
-
-    return normalizeProject(JSON.parse(saved));
+    return saved
+      ? normalizeProject(JSON.parse(saved))
+      : createDefaultProject();
   } catch (error) {
     console.warn(error);
     return createDefaultProject();
@@ -205,24 +242,43 @@ let playingSceneId = project.startSceneId;
 
 const elements = {
   gameTitle: $("#gameTitle"),
+
   sceneList: $("#sceneList"),
   sceneNumber: $("#sceneNumber"),
   sceneHeading: $("#sceneHeading"),
   sceneTitle: $("#sceneTitle"),
   sceneTask: $("#sceneTask"),
-  mediaType: $("#mediaType"),
-  mediaUrl: $("#mediaUrl"),
+
+  sceneMediaType: $("#sceneMediaType"),
+  sceneMediaUrl: $("#sceneMediaUrl"),
+  sceneMediaStatus: $("#sceneMediaStatus"),
+  sceneMediaPreview: $("#sceneMediaPreview"),
+
   answerList: $("#answerList"),
+
+  feedbackTitle: $("#feedbackTitle"),
+  feedbackText: $("#feedbackText"),
+  restartText: $("#restartText"),
+  feedbackImage: $("#feedbackImage"),
+
+  fontFamily: $("#fontFamily"),
+  buttonShape: $("#buttonShape"),
+  backgroundColor: $("#backgroundColor"),
+  accentColor: $("#accentColor"),
+  backgroundImage: $("#backgroundImage"),
+
+  transparentBackground:
+    $("#transparentBackground"),
+
+  makeStartButton: $("#makeStartButton"),
+
   miniPlayer: $("#miniPlayer"),
   fullPlayer: $("#fullPlayer"),
-  modal: $("#modal"),
-  startButton: $("#startBtn"),
-  font: $("#font"),
-  shape: $("#shape"),
-  background: $("#bgColor"),
-  accent: $("#accentColor"),
-  backgroundImage: $("#bgImage"),
-  transparent: $("#transparentBg"),
+  previewModal: $("#previewModal"),
+
+  iframeCode: $("#iframeCode"),
+  iframeStatus: $("#iframeStatus"),
+
   toast: $("#toast")
 };
 
@@ -230,7 +286,8 @@ function getActiveScene() {
   return (
     project.scenes.find(
       scene => scene.id === activeSceneId
-    ) || project.scenes[0]
+    ) ||
+    project.scenes[0]
   );
 }
 
@@ -258,13 +315,6 @@ function escapeHtml(value) {
   );
 }
 
-function safeCssUrl(value) {
-  return String(value || "").replace(
-    /["\\()]/g,
-    character => encodeURIComponent(character)
-  );
-}
-
 function showToast(message) {
   elements.toast.textContent = message;
   elements.toast.hidden = false;
@@ -273,24 +323,114 @@ function showToast(message) {
 
   showToast.timer = setTimeout(() => {
     elements.toast.hidden = true;
-  }, 2000);
+  }, 2200);
 }
 
-function slugify(value) {
-  return (
-    String(value || "game")
-      .toLowerCase()
-      .replace(/[^a-z0-9а-яё]+/gi, "-")
-      .replace(/^-|-$/g, "") || "game"
-  );
+/*
+  Преобразование облачных ссылок.
+
+  Google Drive:
+  ссылка вида /file/d/FILE_ID/view
+  преобразуется в адрес изображения.
+
+  Dropbox:
+  dl=0 заменяется на raw=1.
+
+  OneDrive:
+  используется публичный content endpoint.
+*/
+
+function directMediaUrl(value, mediaType = "image") {
+  const originalUrl =
+    String(value || "").trim();
+
+  if (!originalUrl) {
+    return "";
+  }
+
+  try {
+    const url = new URL(originalUrl);
+
+    if (
+      url.hostname.includes("drive.google.com")
+    ) {
+      let fileId = "";
+
+      const pathMatch =
+        url.pathname.match(
+          /\/file\/d\/([^/]+)/
+        );
+
+      if (pathMatch) {
+        fileId = pathMatch[1];
+      }
+
+      if (!fileId) {
+        fileId =
+          url.searchParams.get("id") || "";
+      }
+
+      if (fileId) {
+        if (mediaType === "image") {
+          return (
+            "https://lh3.googleusercontent.com/d/" +
+            encodeURIComponent(fileId)
+          );
+        }
+
+        return (
+          "https://drive.google.com/uc" +
+          "?export=download&id=" +
+          encodeURIComponent(fileId)
+        );
+      }
+    }
+
+    if (
+      url.hostname.includes("dropbox.com")
+    ) {
+      url.searchParams.delete("dl");
+      url.searchParams.set("raw", "1");
+
+      return url.toString();
+    }
+
+    if (
+      url.hostname === "1drv.ms" ||
+      url.hostname.includes(
+        "onedrive.live.com"
+      )
+    ) {
+      const encodedShareUrl = btoa(
+        unescape(
+          encodeURIComponent(originalUrl)
+        )
+      )
+        .replace(/\//g, "_")
+        .replace(/\+/g, "-")
+        .replace(/=+$/, "");
+
+      return (
+        "https://api.onedrive.com/v1.0" +
+        "/shares/u!" +
+        encodedShareUrl +
+        "/root/content"
+      );
+    }
+
+    return originalUrl;
+  } catch (error) {
+    return originalUrl;
+  }
 }
 
 function render() {
   const scene = getActiveScene();
 
-  const sceneIndex = project.scenes.findIndex(
-    item => item.id === scene.id
-  );
+  const sceneIndex =
+    project.scenes.findIndex(
+      item => item.id === scene.id
+    );
 
   document.documentElement.style.setProperty(
     "--accent",
@@ -308,27 +448,51 @@ function render() {
 
   elements.sceneTitle.value = scene.title;
   elements.sceneTask.value = scene.task;
-  elements.mediaType.value = scene.media.type;
-  elements.mediaUrl.value = scene.media.url;
 
-  elements.startButton.textContent =
+  elements.sceneMediaType.value =
+    scene.media.type;
+
+  elements.sceneMediaUrl.value =
+    scene.media.url;
+
+  elements.makeStartButton.textContent =
     scene.id === project.startSceneId
       ? "★ Стартовая сцена"
       : "☆ Сделать стартовой";
 
-  elements.font.value = project.theme.font;
-  elements.shape.value = project.theme.shape;
-  elements.background.value = project.theme.background;
-  elements.accent.value = project.theme.accent;
+  elements.feedbackTitle.value =
+    project.feedback.title;
+
+  elements.feedbackText.value =
+    project.feedback.text;
+
+  elements.restartText.value =
+    project.feedback.restartText;
+
+  elements.feedbackImage.value =
+    project.feedback.image;
+
+  elements.fontFamily.value =
+    project.theme.font;
+
+  elements.buttonShape.value =
+    project.theme.shape;
+
+  elements.backgroundColor.value =
+    project.theme.background;
+
+  elements.accentColor.value =
+    project.theme.accent;
 
   elements.backgroundImage.value =
     project.theme.backgroundImage;
 
-  elements.transparent.checked =
+  elements.transparentBackground.checked =
     project.theme.transparent;
 
   renderSceneList();
   renderAnswers();
+  renderMediaPreview();
 
   renderPlayer(
     elements.miniPlayer,
@@ -343,11 +507,16 @@ function renderSceneList() {
   elements.sceneList.innerHTML = "";
 
   project.scenes.forEach((scene, index) => {
-    const button = document.createElement("button");
+    const button =
+      document.createElement("button");
 
     button.className =
       "scene-card" +
-      (scene.id === activeSceneId ? " active" : "");
+      (
+        scene.id === activeSceneId
+          ? " active"
+          : ""
+      );
 
     button.innerHTML = `
       <span class="number">
@@ -356,7 +525,10 @@ function renderSceneList() {
 
       <span>
         <b>${escapeHtml(scene.title)}</b>
-        <small>${scene.answers.length} вариант(а)</small>
+
+        <small>
+          ${scene.answers.length} вариант(а)
+        </small>
       </span>
 
       ${
@@ -375,25 +547,111 @@ function renderSceneList() {
   });
 }
 
+function renderMediaPreview() {
+  const scene = getActiveScene();
+  const media = scene.media;
+
+  const directUrl = directMediaUrl(
+    media.url,
+    media.type
+  );
+
+  elements.sceneMediaPreview.innerHTML = "";
+
+  elements.sceneMediaStatus.textContent = "";
+
+  elements.sceneMediaStatus.className =
+    "media-status";
+
+  if (
+    media.type === "none" ||
+    !directUrl
+  ) {
+    return;
+  }
+
+  if (directUrl !== media.url) {
+    elements.sceneMediaStatus.textContent =
+      "Облачная ссылка преобразована в прямую.";
+  } else {
+    elements.sceneMediaStatus.textContent =
+      "Проверяем загрузку медиа…";
+  }
+
+  const mediaElement =
+    document.createElement(
+      media.type === "video"
+        ? "video"
+        : "img"
+    );
+
+  mediaElement.src = directUrl;
+
+  if (media.type === "video") {
+    mediaElement.controls = true;
+    mediaElement.muted = true;
+  }
+
+  const handleLoaded = () => {
+    elements.sceneMediaStatus.textContent =
+      "Медиа успешно загружено.";
+
+    elements.sceneMediaStatus.className =
+      "media-status success";
+  };
+
+  mediaElement.addEventListener(
+    "load",
+    handleLoaded
+  );
+
+  mediaElement.addEventListener(
+    "loadeddata",
+    handleLoaded
+  );
+
+  mediaElement.addEventListener(
+    "error",
+    () => {
+      elements.sceneMediaStatus.textContent =
+        "Не удалось загрузить медиа. " +
+        "Проверьте публичный доступ к файлу.";
+
+      elements.sceneMediaStatus.className =
+        "media-status error";
+    }
+  );
+
+  elements.sceneMediaPreview.appendChild(
+    mediaElement
+  );
+}
+
 function renderAnswers() {
   const scene = getActiveScene();
 
   elements.answerList.innerHTML = "";
 
   scene.answers.forEach((answer, index) => {
-    const card = document.createElement("article");
+    const card =
+      document.createElement("article");
+
     card.className = "answer-card";
 
     const sceneOptions = project.scenes
       .map(targetScene => {
         const selected =
-          targetScene.id === answer.nextSceneId
+          answer.action !== "finish" &&
+          targetScene.id ===
+            answer.nextSceneId
             ? "selected"
             : "";
 
         return `
           <option
-            value="${escapeHtml(targetScene.id)}"
+            value="${escapeHtml(
+              targetScene.id
+            )}"
             ${selected}
           >
             ${escapeHtml(targetScene.title)}
@@ -408,7 +666,9 @@ function renderAnswers() {
           ВАРИАНТ ${String(index + 1).padStart(2, "0")}
         </b>
 
-        <button data-delete>Удалить</button>
+        <button data-delete>
+          Удалить
+        </button>
       </div>
 
       <div class="answer-grid">
@@ -422,7 +682,7 @@ function renderAnswers() {
         </label>
 
         <label>
-          ТЕКСТ
+          ТЕКСТ ОТВЕТА
 
           <input
             data-text
@@ -432,10 +692,21 @@ function renderAnswers() {
       </div>
 
       <label>
-        ПЕРЕХОД К СЦЕНЕ
+        ДЕЙСТВИЕ
 
-        <select data-next>
+        <select data-next-scene>
           ${sceneOptions}
+
+          <option
+            value="__finish__"
+            ${
+              answer.action === "finish"
+                ? "selected"
+                : ""
+            }
+          >
+            ★ Завершить игру
+          </option>
         </select>
       </label>
 
@@ -488,7 +759,7 @@ function renderAnswers() {
             value="${escapeHtml(
               answer.transition.url
             )}"
-            placeholder="https://..."
+            placeholder="Прямая или облачная ссылка"
           >
         </label>
       </div>
@@ -498,6 +769,7 @@ function renderAnswers() {
       .querySelector("[data-icon]")
       .addEventListener("input", event => {
         answer.icon = event.target.value;
+
         refreshMiniPlayer();
         saveProject();
       });
@@ -506,14 +778,24 @@ function renderAnswers() {
       .querySelector("[data-text]")
       .addEventListener("input", event => {
         answer.text = event.target.value;
+
         refreshMiniPlayer();
         saveProject();
       });
 
     card
-      .querySelector("[data-next]")
+      .querySelector("[data-next-scene]")
       .addEventListener("change", event => {
-        answer.nextSceneId = event.target.value;
+        const value = event.target.value;
+
+        if (value === "__finish__") {
+          answer.action = "finish";
+          answer.nextSceneId = "__finish__";
+        } else {
+          answer.action = "scene";
+          answer.nextSceneId = value;
+        }
+
         saveProject();
       });
 
@@ -546,9 +828,10 @@ function renderAnswers() {
           return;
         }
 
-        scene.answers = scene.answers.filter(
-          item => item.id !== answer.id
-        );
+        scene.answers =
+          scene.answers.filter(
+            item => item.id !== answer.id
+          );
 
         render();
       });
@@ -565,12 +848,17 @@ function refreshMiniPlayer() {
   );
 }
 
-function renderPlayer(container, scene, interactive) {
+function renderPlayer(
+  container,
+  scene,
+  interactive
+) {
   container.innerHTML = "";
 
-  const player = document.createElement("section");
+  const player =
+    document.createElement("section");
 
-  const hasSceneMedia = Boolean(
+  const hasMedia = Boolean(
     (
       scene.media.type === "image" ||
       scene.media.type === "video"
@@ -580,12 +868,16 @@ function renderPlayer(container, scene, interactive) {
 
   player.className =
     "player" +
-    (project.theme.transparent
-      ? " transparent"
-      : "") +
-    (hasSceneMedia
-      ? " has-media"
-      : "");
+    (
+      project.theme.transparent
+        ? " transparent"
+        : ""
+    ) +
+    (
+      hasMedia
+        ? " has-media"
+        : ""
+    );
 
   player.style.setProperty(
     "--player-background",
@@ -610,26 +902,40 @@ function renderPlayer(container, scene, interactive) {
     scene.media.type === "image" &&
     scene.media.url
   ) {
-    imageUrl = scene.media.url;
+    imageUrl = directMediaUrl(
+      scene.media.url,
+      "image"
+    );
   } else if (
     !project.theme.transparent &&
     project.theme.backgroundImage
   ) {
-    imageUrl = project.theme.backgroundImage;
+    imageUrl = directMediaUrl(
+      project.theme.backgroundImage,
+      "image"
+    );
   }
 
   if (imageUrl) {
     player.style.backgroundImage =
-      `url("${safeCssUrl(imageUrl)}")`;
+      `url("${imageUrl.replace(
+        /"/g,
+        "%22"
+      )}")`;
   }
 
   if (
     scene.media.type === "video" &&
     scene.media.url
   ) {
-    const video = document.createElement("video");
+    const video =
+      document.createElement("video");
 
-    video.src = scene.media.url;
+    video.src = directMediaUrl(
+      scene.media.url,
+      "video"
+    );
+
     video.autoplay = true;
     video.muted = true;
     video.loop = true;
@@ -638,19 +944,24 @@ function renderPlayer(container, scene, interactive) {
     player.appendChild(video);
   }
 
-  const sceneIndex = project.scenes.findIndex(
-    item => item.id === scene.id
-  );
+  const sceneIndex =
+    project.scenes.findIndex(
+      item => item.id === scene.id
+    );
 
-  const overlay = document.createElement("div");
+  const overlay =
+    document.createElement("div");
+
   overlay.className = "player-overlay";
 
   overlay.innerHTML = `
     <div class="player-top">
-      <span>✦ ${escapeHtml(project.title)}</span>
+      <span>${escapeHtml(project.title)}</span>
 
       <span>
-        ${sceneIndex + 1} / ${project.scenes.length}
+        ${sceneIndex + 1}
+        /
+        ${project.scenes.length}
       </span>
     </div>
 
@@ -665,11 +976,14 @@ function renderPlayer(container, scene, interactive) {
     </div>
   `;
 
-  const answersContainer =
-    overlay.querySelector(".player-answers");
+  const answerContainer =
+    overlay.querySelector(
+      ".player-answers"
+    );
 
   scene.answers.forEach(answer => {
-    const button = document.createElement("button");
+    const button =
+      document.createElement("button");
 
     button.className =
       "player-answer shape-" +
@@ -686,7 +1000,7 @@ function renderPlayer(container, scene, interactive) {
       });
     }
 
-    answersContainer.appendChild(button);
+    answerContainer.appendChild(button);
   });
 
   player.appendChild(overlay);
@@ -712,15 +1026,27 @@ function playAnswer(answer) {
 
   transitionPlayer.className =
     "player" +
-    (project.theme.transparent
-      ? " transparent"
-      : "");
+    (
+      project.theme.transparent
+        ? " transparent"
+        : ""
+    );
 
   if (media.type === "image") {
-    transitionPlayer.classList.add("has-media");
+    const imageUrl = directMediaUrl(
+      media.url,
+      "image"
+    );
+
+    transitionPlayer.classList.add(
+      "has-media"
+    );
 
     transitionPlayer.style.backgroundImage =
-      `url("${safeCssUrl(media.url)}")`;
+      `url("${imageUrl.replace(
+        /"/g,
+        "%22"
+      )}")`;
 
     elements.fullPlayer.appendChild(
       transitionPlayer
@@ -732,9 +1058,14 @@ function playAnswer(answer) {
   }
 
   if (media.type === "video") {
-    const video = document.createElement("video");
+    const video =
+      document.createElement("video");
 
-    video.src = media.url;
+    video.src = directMediaUrl(
+      media.url,
+      "video"
+    );
+
     video.autoplay = true;
     video.controls = true;
     video.playsInline = true;
@@ -752,24 +1083,138 @@ function playAnswer(answer) {
 }
 
 function openNextScene(answer) {
+  if (
+    answer.action === "finish" ||
+    answer.nextSceneId === "__finish__"
+  ) {
+    showFinalFeedback();
+    return;
+  }
+
   playingSceneId =
     answer.nextSceneId ||
     project.startSceneId;
 
-  const nextScene =
+  const scene =
     project.scenes.find(
-      scene => scene.id === playingSceneId
-    ) || project.scenes[0];
+      item => item.id === playingSceneId
+    ) ||
+    project.scenes[0];
 
   renderPlayer(
     elements.fullPlayer,
-    nextScene,
+    scene,
     true
   );
 }
 
+function showFinalFeedback() {
+  const feedback = project.feedback;
+
+  const player =
+    document.createElement("section");
+
+  const imageUrl = directMediaUrl(
+    feedback.image,
+    "image"
+  );
+
+  elements.fullPlayer.innerHTML = "";
+
+  player.className =
+    "player" +
+    (
+      project.theme.transparent
+        ? " transparent"
+        : ""
+    ) +
+    (
+      imageUrl
+        ? " has-media"
+        : ""
+    );
+
+  player.style.setProperty(
+    "--player-background",
+    project.theme.transparent
+      ? "transparent"
+      : project.theme.background
+  );
+
+  player.style.setProperty(
+    "--player-accent",
+    project.theme.accent
+  );
+
+  player.style.setProperty(
+    "--player-font",
+    project.theme.font
+  );
+
+  if (imageUrl) {
+    player.style.backgroundImage =
+      `url("${imageUrl.replace(
+        /"/g,
+        "%22"
+      )}")`;
+  }
+
+  player.innerHTML = `
+    <div class="player-overlay">
+      <div></div>
+
+      <div>
+        <span class="scene-label">
+          FINISH
+        </span>
+
+        <h3>
+          ${escapeHtml(feedback.title)}
+        </h3>
+
+        <p>
+          ${escapeHtml(feedback.text)}
+        </p>
+
+        <button
+          id="restartGameButton"
+          class="
+            player-answer
+            shape-${project.theme.shape}
+          "
+        >
+          ${escapeHtml(
+            feedback.restartText
+          )}
+        </button>
+      </div>
+    </div>
+  `;
+
+  elements.fullPlayer.appendChild(player);
+
+  $("#restartGameButton")
+    .addEventListener("click", () => {
+      playingSceneId =
+        project.startSceneId;
+
+      const startScene =
+        project.scenes.find(
+          item =>
+            item.id === playingSceneId
+        ) ||
+        project.scenes[0];
+
+      renderPlayer(
+        elements.fullPlayer,
+        startScene,
+        true
+      );
+    });
+}
+
 function addScene() {
-  const newScene = {
+  const scene = {
     id: createId("scene"),
     title: "Новая сцена",
     task: "Введите задание.",
@@ -784,6 +1229,7 @@ function addScene() {
         id: createId("answer"),
         text: "Продолжить",
         icon: "→",
+        action: "scene",
         nextSceneId: project.startSceneId,
 
         transition: {
@@ -794,8 +1240,8 @@ function addScene() {
     ]
   };
 
-  project.scenes.push(newScene);
-  activeSceneId = newScene.id;
+  project.scenes.push(scene);
+  activeSceneId = scene.id;
 
   render();
 }
@@ -809,27 +1255,34 @@ function deleteScene() {
     return;
   }
 
-  const deletedId = activeSceneId;
+  const deletedSceneId = activeSceneId;
 
-  project.scenes = project.scenes.filter(
-    scene => scene.id !== deletedId
-  );
+  project.scenes =
+    project.scenes.filter(
+      scene =>
+        scene.id !== deletedSceneId
+    );
 
-  const fallbackScene = project.scenes[0];
+  const fallbackScene =
+    project.scenes[0];
 
   project.scenes.forEach(scene => {
     scene.answers.forEach(answer => {
       if (
-        answer.nextSceneId === deletedId
+        answer.nextSceneId ===
+        deletedSceneId
       ) {
         answer.nextSceneId =
           fallbackScene.id;
+
+        answer.action = "scene";
       }
     });
   });
 
   if (
-    project.startSceneId === deletedId
+    project.startSceneId ===
+    deletedSceneId
   ) {
     project.startSceneId =
       fallbackScene.id;
@@ -847,6 +1300,7 @@ function addAnswer() {
     id: createId("answer"),
     text: "Новый вариант",
     icon: "→",
+    action: "scene",
     nextSceneId: project.startSceneId,
 
     transition: {
@@ -861,15 +1315,18 @@ function addAnswer() {
 function downloadFile(
   content,
   fileName,
-  contentType
+  type
 ) {
   const blob = new Blob(
     [content],
-    { type: contentType }
+    { type }
   );
 
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
+  const url =
+    URL.createObjectURL(blob);
+
+  const link =
+    document.createElement("a");
 
   link.href = url;
   link.download = fileName;
@@ -880,402 +1337,98 @@ function downloadFile(
   }, 500);
 }
 
-/*
-  Создание автономной HTML-игры.
-  Данные проекта кодируются в Base64,
-  чтобы пользовательский текст не ломал script.
-*/
-
-function exportGame() {
-  const encodedProject = btoa(
-    unescape(
-      encodeURIComponent(
-        JSON.stringify(project)
-      )
-    )
-  );
-
-  const exportedHtml = `<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1"
-  >
-
-  <title>${escapeHtml(project.title)}</title>
-
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    html,
-    body {
-      margin: 0;
-      min-height: 100%;
-      background: ${
-        project.theme.transparent
-          ? "transparent"
-          : project.theme.background
-      };
-    }
-
-    body {
-      color: #fff;
-      font-family: ${project.theme.font};
-    }
-
-    button {
-      font: inherit;
-      cursor: pointer;
-    }
-
-    #app {
-      min-height: 100vh;
-      padding: 16px;
-
-      display: grid;
-      place-items: center;
-    }
-
-    .card {
-      width: min(900px, 100%);
-      min-height: calc(100vh - 32px);
-      position: relative;
-      overflow: hidden;
-
-      border-radius: 20px;
-      background-size: cover;
-      background-position: center;
-    }
-
-    .video {
-      width: 100%;
-      height: 100%;
-
-      position: absolute;
-      inset: 0;
-
-      object-fit: cover;
-    }
-
-    .overlay {
-      position: absolute;
-      inset: 0;
-      padding: clamp(22px, 5vw, 48px);
-
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .shade {
-      background:
-        linear-gradient(
-          180deg,
-          rgba(7, 16, 29, 0.09),
-          rgba(7, 16, 29, 0.93) 84%
-        );
-    }
-
-    .top {
-      display: flex;
-      justify-content: space-between;
-      font-size: 10px;
-      font-weight: bold;
-    }
-
-    .label {
-      color: ${project.theme.accent};
-      font-size: 11px;
-      font-weight: 900;
-      text-transform: uppercase;
-    }
-
-    h1 {
-      font-size: clamp(30px, 6vw, 60px);
-      line-height: 1.05;
-    }
-
-    .answers {
-      display: grid;
-      gap: 9px;
-    }
-
-    .answer {
-      padding: 15px;
-
-      display: flex;
-      gap: 12px;
-
-      border: 1px solid rgba(255, 255, 255, 0.21);
-
-      color: #fff;
-      background: rgba(17, 24, 39, 0.74);
-
-      text-align: left;
-    }
-
-    .answer:hover {
-      color: #101827;
-      background: ${project.theme.accent};
-    }
-  </style>
-</head>
-
-<body>
-  <div id="app"></div>
-
-  <script>
-    const encodedProject = "${encodedProject}";
-
-    const game = JSON.parse(
-      decodeURIComponent(
-        escape(
-          atob(encodedProject)
-        )
-      )
-    );
-
-    let currentSceneId = game.startSceneId;
-
-    function escapeText(value) {
-      return String(value || "").replace(
-        /[&<>"']/g,
-        character => {
-          const replacements = {
-            "&": "&amp;",
-            "<": "&lt;",
-            ">": "&gt;",
-            '"': "&quot;",
-            "'": "&#039;"
-          };
-
-          return replacements[character];
-        }
-      );
-    }
-
-    function safeUrl(value) {
-      return String(value || "")
-        .replace(/"/g, "%22");
-    }
-
-    function renderGame() {
-      const scene =
-        game.scenes.find(
-          item => item.id === currentSceneId
-        ) || game.scenes[0];
-
-      let image = "";
-
-      if (
-        scene.media.type === "image" &&
-        scene.media.url
-      ) {
-        image = scene.media.url;
-      } else if (
-        !game.theme.transparent &&
-        game.theme.backgroundImage
-      ) {
-        image = game.theme.backgroundImage;
-      }
-
-      const hasMedia =
-        scene.media.type !== "none" &&
-        scene.media.url;
-
-      const shouldUseShade =
-        hasMedia ||
-        !game.theme.transparent;
-
-      let radius = "12px";
-
-      if (game.theme.shape === "round") {
-        radius = "999px";
-      }
-
-      if (game.theme.shape === "square") {
-        radius = "3px";
-      }
-
-      const cardBackground =
-        game.theme.transparent
-          ? "transparent"
-          : game.theme.background;
-
-      document.querySelector("#app").innerHTML =
-        '<section class="card" ' +
-        'style="background-color:' +
-        cardBackground +
-        ";" +
-        (
-          image
-            ? "background-image:url(&quot;" +
-              safeUrl(image) +
-              "&quot;)"
-            : ""
-        ) +
-        '">' +
-
-        (
-          scene.media.type === "video" &&
-          scene.media.url
-            ? '<video class="video" src="' +
-              escapeText(scene.media.url) +
-              '" autoplay muted loop playsinline></video>'
-            : ""
-        ) +
-
-        '<div class="overlay ' +
-        (shouldUseShade ? "shade" : "") +
-        '">' +
-
-          '<div class="top">' +
-            "<span>✦ " +
-              escapeText(game.title) +
-            "</span>" +
-          "</div>" +
-
-          "<div>" +
-            '<span class="label">' +
-              escapeText(scene.title) +
-            "</span>" +
-
-            "<h1>" +
-              escapeText(scene.task) +
-            "</h1>" +
-
-            '<div class="answers">' +
-              scene.answers.map(
-                (answer, index) => {
-                  return (
-                    '<button class="answer" ' +
-                    'data-answer="' +
-                    index +
-                    '" ' +
-                    'style="border-radius:' +
-                    radius +
-                    '">' +
-
-                    "<span>" +
-                      escapeText(answer.icon) +
-                    "</span>" +
-
-                    "<span>" +
-                      escapeText(answer.text) +
-                    "</span>" +
-
-                    "</button>"
-                  );
-                }
-              ).join("") +
-            "</div>" +
-          "</div>" +
-
-        "</div>" +
-        "</section>";
-
-      document
-        .querySelectorAll("[data-answer]")
-        .forEach(button => {
-          button.addEventListener(
-            "click",
-            () => {
-              const answer =
-                scene.answers[
-                  Number(
-                    button.dataset.answer
-                  )
-                ];
-
-              playAnswer(answer);
-            }
-          );
-        });
-    }
-
-    function openNextScene(answer) {
-      currentSceneId =
-        answer.nextSceneId ||
-        game.startSceneId;
-
-      renderGame();
-    }
-
-    function playAnswer(answer) {
-      const media = answer.transition;
-
-      if (
-        !media ||
-        media.type === "none" ||
-        !media.url
-      ) {
-        openNextScene(answer);
-        return;
-      }
-
-      const card =
-        document.querySelector(".card");
-
-      if (media.type === "image") {
-        const imageLayer =
-          document.createElement("div");
-
-        imageLayer.className = "video";
-
-        imageLayer.style.background =
-          'url("' +
-          safeUrl(media.url) +
-          '") center / cover';
-
-        card.appendChild(imageLayer);
-
-        setTimeout(() => {
-          openNextScene(answer);
-        }, 1800);
-      }
-
-      if (media.type === "video") {
-        const video =
-          document.createElement("video");
-
-        video.className = "video";
-        video.src = media.url;
-        video.autoplay = true;
-        video.controls = true;
-        video.playsInline = true;
-
-        video.addEventListener(
-          "ended",
-          () => openNextScene(answer)
-        );
-
-        card.appendChild(video);
-      }
-    }
-
-    renderGame();
-  <\/script>
-</body>
-</html>`;
-
-  downloadFile(
-    exportedHtml,
-    slugify(project.title) + ".html",
-    "text/html"
+function slugify(value) {
+  return (
+    String(value || "game")
+      .toLowerCase()
+      .replace(/[^a-z0-9а-яё]+/gi, "-")
+      .replace(/^-|-$/g, "") ||
+    "game"
   );
 }
 
-/* Основные поля */
+/*
+  Кодирование проекта для передачи
+  в player.html после символа #.
+*/
+
+function encodeProject() {
+  const json = JSON.stringify(project);
+
+  const base64 = btoa(
+    unescape(
+      encodeURIComponent(json)
+    )
+  );
+
+  return base64
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+function createPlayerUrl() {
+  if (location.protocol === "file:") {
+    return "";
+  }
+
+  const playerUrl = new URL(
+    "player.html",
+    location.href
+  );
+
+  playerUrl.hash = encodeProject();
+
+  return playerUrl.href;
+}
+
+function generateIframe() {
+  const playerUrl = createPlayerUrl();
+
+  if (!playerUrl) {
+    elements.iframeStatus.textContent =
+      "Сначала опубликуйте index.html, " +
+      "styles.css, app.js и player.html " +
+      "через GitHub Pages.";
+
+    elements.iframeStatus.className =
+      "media-status error";
+
+    return "";
+  }
+
+  const iframeCode =
+`<iframe
+  src="${playerUrl}"
+  width="100%"
+  height="700"
+  title="${escapeHtml(project.title)}"
+  allow="autoplay; fullscreen"
+  allowfullscreen
+  loading="lazy"
+  style="display:block;width:100%;border:0;background:transparent;"
+></iframe>`;
+
+  elements.iframeCode.value =
+    iframeCode;
+
+  elements.iframeStatus.textContent =
+    "iframe готов. Внутри будет только игра, без редактора.";
+
+  elements.iframeStatus.className =
+    "media-status success";
+
+  return iframeCode;
+}
+
+/* Поля проекта */
 
 elements.gameTitle.addEventListener(
   "input",
   event => {
-    project.title = event.target.value;
+    project.title =
+      event.target.value;
+
     refreshMiniPlayer();
     saveProject();
   }
@@ -1288,7 +1441,8 @@ elements.sceneTitle.addEventListener(
       event.target.value;
 
     elements.sceneHeading.textContent =
-      event.target.value || "Без названия";
+      event.target.value ||
+      "Без названия";
 
     renderSceneList();
     refreshMiniPlayer();
@@ -1307,31 +1461,75 @@ elements.sceneTask.addEventListener(
   }
 );
 
-elements.mediaType.addEventListener(
+elements.sceneMediaType.addEventListener(
   "change",
   event => {
     getActiveScene().media.type =
       event.target.value;
 
+    renderMediaPreview();
     refreshMiniPlayer();
     saveProject();
   }
 );
 
-elements.mediaUrl.addEventListener(
+elements.sceneMediaUrl.addEventListener(
   "input",
   event => {
     getActiveScene().media.url =
       event.target.value;
 
+    renderMediaPreview();
     refreshMiniPlayer();
+    saveProject();
+  }
+);
+
+/* Финальный фидбек */
+
+elements.feedbackTitle.addEventListener(
+  "input",
+  event => {
+    project.feedback.title =
+      event.target.value;
+
+    saveProject();
+  }
+);
+
+elements.feedbackText.addEventListener(
+  "input",
+  event => {
+    project.feedback.text =
+      event.target.value;
+
+    saveProject();
+  }
+);
+
+elements.restartText.addEventListener(
+  "input",
+  event => {
+    project.feedback.restartText =
+      event.target.value;
+
+    saveProject();
+  }
+);
+
+elements.feedbackImage.addEventListener(
+  "input",
+  event => {
+    project.feedback.image =
+      event.target.value;
+
     saveProject();
   }
 );
 
 /* Оформление */
 
-elements.font.addEventListener(
+elements.fontFamily.addEventListener(
   "change",
   event => {
     project.theme.font =
@@ -1342,7 +1540,7 @@ elements.font.addEventListener(
   }
 );
 
-elements.shape.addEventListener(
+elements.buttonShape.addEventListener(
   "change",
   event => {
     project.theme.shape =
@@ -1353,7 +1551,7 @@ elements.shape.addEventListener(
   }
 );
 
-elements.background.addEventListener(
+elements.backgroundColor.addEventListener(
   "input",
   event => {
     project.theme.background =
@@ -1364,7 +1562,7 @@ elements.background.addEventListener(
   }
 );
 
-elements.accent.addEventListener(
+elements.accentColor.addEventListener(
   "input",
   event => {
     project.theme.accent =
@@ -1385,45 +1583,48 @@ elements.backgroundImage.addEventListener(
   }
 );
 
-elements.transparent.addEventListener(
-  "change",
-  event => {
-    project.theme.transparent =
-      event.target.checked;
+elements.transparentBackground
+  .addEventListener(
+    "change",
+    event => {
+      project.theme.transparent =
+        event.target.checked;
 
-    refreshMiniPlayer();
-    saveProject();
-  }
-);
+      refreshMiniPlayer();
+      saveProject();
+    }
+  );
 
-/* Управление сценами */
+/* Сцены и ответы */
 
-$("#addSceneBtn").addEventListener(
+$("#addSceneButton").addEventListener(
   "click",
   addScene
 );
 
-$("#deleteSceneBtn").addEventListener(
+$("#deleteSceneButton").addEventListener(
   "click",
   deleteScene
 );
 
-$("#addAnswerBtn").addEventListener(
+$("#addAnswerButton").addEventListener(
   "click",
   addAnswer
 );
 
-elements.startButton.addEventListener(
+elements.makeStartButton.addEventListener(
   "click",
   () => {
-    project.startSceneId = activeSceneId;
+    project.startSceneId =
+      activeSceneId;
+
     render();
   }
 );
 
 /* Новый проект */
 
-$("#newBtn").addEventListener(
+$("#newProjectButton").addEventListener(
   "click",
   () => {
     const confirmed = confirm(
@@ -1435,8 +1636,14 @@ $("#newBtn").addEventListener(
     }
 
     project = createDefaultProject();
-    activeSceneId = project.startSceneId;
-    playingSceneId = project.startSceneId;
+
+    activeSceneId =
+      project.startSceneId;
+
+    playingSceneId =
+      project.startSceneId;
+
+    elements.iframeCode.value = "";
 
     render();
   }
@@ -1444,7 +1651,7 @@ $("#newBtn").addEventListener(
 
 /* JSON */
 
-$("#saveBtn").addEventListener(
+$("#saveJsonButton").addEventListener(
   "click",
   () => {
     downloadFile(
@@ -1455,10 +1662,11 @@ $("#saveBtn").addEventListener(
   }
 );
 
-$("#loadInput").addEventListener(
+$("#loadJsonInput").addEventListener(
   "change",
   event => {
-    const file = event.target.files[0];
+    const file =
+      event.target.files[0];
 
     if (!file) {
       return;
@@ -1484,7 +1692,7 @@ $("#loadInput").addEventListener(
           showToast("Проект загружен");
         } catch (error) {
           console.error(error);
-          showToast("Ошибка JSON");
+          showToast("Ошибка JSON-файла");
         }
       }
     );
@@ -1496,16 +1704,18 @@ $("#loadInput").addEventListener(
 
 /* Предпросмотр */
 
-$("#previewBtn").addEventListener(
+$("#previewButton").addEventListener(
   "click",
   () => {
-    playingSceneId = project.startSceneId;
+    playingSceneId =
+      project.startSceneId;
 
     const startScene =
       project.scenes.find(
         scene =>
           scene.id === playingSceneId
-      ) || project.scenes[0];
+      ) ||
+      project.scenes[0];
 
     renderPlayer(
       elements.fullPlayer,
@@ -1513,37 +1723,93 @@ $("#previewBtn").addEventListener(
       true
     );
 
-    elements.modal.classList.toggle(
+    elements.previewModal.classList.toggle(
       "transparent-mode",
       project.theme.transparent
     );
 
-    elements.modal.classList.add("open");
+    elements.previewModal.classList.add(
+      "open"
+    );
 
-    elements.modal.setAttribute(
+    elements.previewModal.setAttribute(
       "aria-hidden",
       "false"
     );
   }
 );
 
-$("#closeBtn").addEventListener(
+$("#closePreviewButton").addEventListener(
   "click",
   () => {
-    elements.modal.classList.remove("open");
+    elements.previewModal.classList.remove(
+      "open"
+    );
 
-    elements.modal.setAttribute(
+    elements.previewModal.setAttribute(
       "aria-hidden",
       "true"
     );
   }
 );
 
-/* Экспорт игры */
+/* iframe */
 
-$("#exportBtn").addEventListener(
+$("#generateIframeButton")
+  .addEventListener(
+    "click",
+    generateIframe
+  );
+
+$("#copyIframeButton")
+  .addEventListener(
+    "click",
+    async () => {
+      let iframeCode =
+        elements.iframeCode.value.trim();
+
+      if (!iframeCode) {
+        iframeCode = generateIframe();
+      }
+
+      if (!iframeCode) {
+        return;
+      }
+
+      try {
+        await navigator.clipboard.writeText(
+          iframeCode
+        );
+
+        showToast("iframe скопирован");
+      } catch (error) {
+        elements.iframeCode.select();
+        document.execCommand("copy");
+
+        showToast("iframe скопирован");
+      }
+    }
+  );
+
+$("#openPlayerButton").addEventListener(
   "click",
-  exportGame
+  () => {
+    const playerUrl = createPlayerUrl();
+
+    if (!playerUrl) {
+      showToast(
+        "Сначала опубликуйте проект через GitHub Pages"
+      );
+
+      return;
+    }
+
+    window.open(
+      playerUrl,
+      "_blank",
+      "noopener"
+    );
+  }
 );
 
 /* Первый запуск */
