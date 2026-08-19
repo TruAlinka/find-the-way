@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <title>Interactive game</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      overflow-x: hidden;
+    }
+
+    body {
+      color: #fff;
+      background: transparent;
+      font-family: Arial, sans-serif;
+    }
+
+    button {
+      font: inherit;
+      cursor: pointer;
+    }
+
+    #app {
+      min-height: 100vh;
+      padding: 12px;
+      display: grid;
+      place-items: center;
+    }
+
+    .card {
+      position: relative;
+      width: 100%;
+      min-height: calc(100vh - 24px);
+      overflow: hidden;
+
+      border-radius: 18px;
+      background-size: cover;
+      background-position: center;
+    }
+
+    .video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      padding: clamp(20px, 5vw, 48px);
+
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .shade {
+      background:
+        linear-gradient(
+          180deg,
+          rgba(7, 16, 29, 0.08),
+          rgba(7, 16, 29, 0.92) 84%
+        );
+    }
+
+    .top {
+      display: flex;
+      justify-content: space-between;
+
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .label {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 850px;
+      margin: 12px 0 26px;
+      font-size: clamp(30px, 6vw, 62px);
+      line-height: 1.04;
+    }
+
+    p {
+      max-width: 760px;
+      font-size: clamp(15px, 2vw, 20px);
+      line-height: 1.55;
+    }
+
+    .answers {
+      display: grid;
+      gap: 9px;
+    }
+
+    .answer {
+      width: 100%;
+      padding: 15px 18px;
+
+      display: flex;
+      align-items: center;
+      gap: 12px;
+
+      border: 1px solid rgba(255, 255, 255, 0.21);
+
+      color: #fff;
+      background: rgba(17, 24, 39, 0.77);
+
+      text-align: left;
+    }
+
+    .answer:hover {
+      color: #101827;
+    }
+
+    .feedback-image {
+      display: block;
+      width: 100%;
+      max-height: 40vh;
+      margin-bottom: 20px;
+
+      border-radius: 14px;
+      object-fit: cover;
+    }
+
+    .message {
+      padding: 20px;
+      color: #fff;
+      text-align: center;
+    }
+
+    .transition {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+
+      background-size: cover;
+      background-position: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="app">
+    <div class="message">Loading…</div>
+  </div>
+
+  <script>
+    "use strict";
+
+    const app = document.querySelector("#app");
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(
+        /[&<>"']/g,
+        character => {
+          const replacements = {
+            "&": "&amp;",
+            "<": "&lt;",
+            ">": "&gt;",
+            '"': "&quot;",
+            "'": "&#039;"
+          };
+
+          return replacements[character];
+        }
+      );
+    }
+
+    function base64UrlDecode(value) {
+      let base64 = value
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+
+      while (base64.length % 4) {
+        base64 += "=";
+      }
+
+      return decodeURIComponent(
+        escape(atob(base64))
+      );
+    }
+
+    function directUrl(value) {
+      const originalUrl =
+        String(value || "").trim();
+
+      if (!originalUrl) {
+        return "";
+      }
+
+      try {
+        const url = new URL(originalUrl);
+
+        /*
+          Google Drive:
+          https://drive.google.com/file/d/FILE_ID/view
+        */
+
+        if (
+          url.hostname.includes("drive.google.com")
+        ) {
+          let fileId = "";
+
+          const pathMatch =
+            url.pathname.match(
+              /\/file\/d\/([^/]+)/
+            );
+
+          if (pathMatch) {
+            fileId = pathMatch[1];
+          }
+
+          if (!fileId) {
+            fileId =
+              url.searchParams.get("id") || "";
+          }
+
+          if (fileId) {
+            return (
+              "https://drive.google.com/uc" +
+              "?export=view&id=" +
+              encodeURIComponent(fileId)
+            );
+          }
+        }
+
+        /*
+          Dropbox:
+          заменяет dl=0 на raw=1.
+        */
+
+        if (
+          url.hostname.includes("dropbox.com")
+        ) {
+          url.searchParams.delete("dl");
+          url.searchParams.set("raw", "1");
+
+          return url.toString();
+        }
+
+        /*
+          OneDrive.
+        */
+
+        if (
+          url.hostname === "1drv.ms" ||
+          url.hostname.includes(
+            "onedrive.live.com"
+          )
+        ) {
+          const encodedShareUrl = btoa(
+            unescape(
+              encodeURIComponent(originalUrl)
+            )
+          )
+            .replace(/\//g, "_")
+            .replace(/\+/g, "-")
+            .replace(/=+$/, "");
+
+          return (
+            "https://api.onedrive.com/v1.0" +
+            "/shares/u!" +
+            encodedShareUrl +
+            "/root/content"
+          );
+        }
+
+        return originalUrl;
+      } catch (error) {
+        return originalUrl;
+      }
+    }
+
+    function loadGame() {
+      try {
+        const encodedGame =
+          location.hash.slice(1);
+
+        if (!encodedGame) {
+          throw new Error(
+            "Game data is missing"
+          );
+        }
+
+        return JSON.parse(
+          base64UrlDecode(encodedGame)
+        );
+      } catch (error) {
+        console.error(error);
+
+        app.innerHTML = `
+          <div class="message">
+            Game data could not be loaded.
+          </div>
+        `;
+
+        throw error;
+      }
+    }
+
+    const game = loadGame();
+    let currentSceneId = game.startSceneId;
+
+    document.documentElement.lang =
+      game.language || "ru";
+
+    document.title =
+      game.title || "Interactive game";
+
+    document.body.style.fontFamily =
+      game.theme.font;
+
+    document.body.style.background =
+      game.theme.transparent
+        ? "transparent"
+        : game.theme.background;
+
+    function getButtonRadius() {
+      if (game.theme.shape === "round") {
+        return "999px";
+      }
+
+      if (game.theme.shape === "square") {
+        return "3px";
+      }
+
+      return "12px";
+    }
+
+    function getCardBackground() {
+      return game.theme.transparent
+        ? "transparent"
+        : game.theme.background;
+    }
+
+    function renderScene() {
+      const scene =
+        game.scenes.find(
+          item => item.id === currentSceneId
+        ) || game.scenes[0];
+
+      const sceneIndex =
+        game.scenes.findIndex(
+          item => item.id === scene.id
+        );
+
+      const sceneImage =
+        scene.media.type === "image"
+          ? directUrl(scene.media.url)
+          : "";
+
+      const globalImage =
+        !game.theme.transparent
+          ? directUrl(
+              game.theme.backgroundImage
+            )
+          : "";
+
+      const backgroundImage =
+        sceneImage || globalImage;
+
+      const hasSceneMedia = Boolean(
+        (
+          scene.media.type === "image" ||
+          scene.media.type === "video"
+        ) &&
+        scene.media.url
+      );
+
+      const useShade =
+        hasSceneMedia ||
+        !game.theme.transparent;
+
+      app.innerHTML = `
+        <section
+          class="card"
+          style="
+            background-color:
+              ${getCardBackground()};
+
+            ${
+              backgroundImage
+                ? `background-image:
+                    url('${escapeHtml(
+                      backgroundImage
+                    )}');`
+                : ""
+            }
+          "
+        >
+          ${
+            scene.media.type === "video" &&
+            scene.media.url
+              ? `
+                <video
+                  class="video"
+                  src="${escapeHtml(
+                    directUrl(scene.media.url)
+                  )}"
+                  autoplay
+                  muted
+                  loop
+                  playsinline
+                ></video>
+              `
+              : ""
+          }
+
+          <div
+            class="overlay ${
+              useShade ? "shade" : ""
+            }"
+          >
+            <div class="top">
+              <span>
+                ${escapeHtml(game.title)}
+              </span>
+
+              <span>
+                ${sceneIndex + 1}
+                /
+                ${game.scenes.length}
+              </span>
+            </div>
+
+            <div>
+              <span
+                class="label"
+                style="
+                  color:${game.theme.accent}
+                "
+              >
+                ${escapeHtml(scene.title)}
+              </span>
+
+              <h1>
+                ${escapeHtml(scene.task)}
+              </h1>
+
+              <div class="answers">
+                ${scene.answers
+                  .map(
+                    (answer, index) => `
+                      <button
+                        class="answer"
+                        data-answer="${index}"
+                        style="
+                          border-radius:
+                            ${getButtonRadius()}
+                        "
+                      >
+                        <span>
+                          ${escapeHtml(
+                            answer.icon
+                          )}
+                        </span>
+
+                        <span>
+                          ${escapeHtml(
+                            answer.text
+                          )}
+                        </span>
+                      </button>
+                    `
+                  )
+                  .join("")}
+              </div>
+            </div>
+          </div>
+        </section>
+      `;
+
+      document
+        .querySelectorAll("[data-answer]")
+        .forEach(button => {
+          button.addEventListener(
+            "click",
+            () => {
+              const answer =
+                scene.answers[
+                  Number(
+                    button.dataset.answer
+                  )
+                ];
+
+              playAnswer(answer);
+            }
+          );
+
+          button.addEventListener(
+            "mouseenter",
+            () => {
+              button.style.background =
+                game.theme.accent;
+            }
+          );
+
+          button.addEventListener(
+            "mouseleave",
+            () => {
+              button.style.background =
+                "rgba(17,24,39,.77)";
+            }
+          );
+        });
+    }
+
+    function showFinalFeedback() {
+      const feedback =
+        game.feedback || {};
+
+      const feedbackImage =
+        directUrl(feedback.image);
+
+      app.innerHTML = `
+        <section
+          class="card"
+          style="
+            background-color:
+              ${getCardBackground()};
+
+            ${
+              feedbackImage
+                ? `background-image:
+                    url('${escapeHtml(
+                      feedbackImage
+                    )}');`
+                : ""
+            }
+          "
+        >
+          <div
+            class="overlay ${
+              feedbackImage ||
+              !game.theme.transparent
+                ? "shade"
+                : ""
+            }"
+          >
+            <div></div>
+
+            <div>
+              <span
+                class="label"
+                style="
+                  color:${game.theme.accent}
+                "
+              >
+                FINISH
+              </span>
+
+              <h1>
+                ${escapeHtml(
+                  feedback.title ||
+                  "Great work!"
+                )}
+              </h1>
+
+              <p>
+                ${escapeHtml(
+                  feedback.text ||
+                  "You completed the game."
+                )}
+              </p>
+
+              <button
+                id="restartButton"
+                class="answer"
+                style="
+                  border-radius:
+                    ${getButtonRadius()}
+                "
+              >
+                ${escapeHtml(
+                  feedback.restartText ||
+                  "Play again"
+                )}
+              </button>
+            </div>
+          </div>
+        </section>
+      `;
+
+      document
+        .querySelector("#restartButton")
+        .addEventListener(
+          "click",
+          () => {
+            currentSceneId =
+              game.startSceneId;
+
+            renderScene();
+          }
+        );
+    }
+
+    function openNextScene(answer) {
+      if (
+        answer.action === "finish" ||
+        answer.nextSceneId === "__finish__"
+      ) {
+        showFinalFeedback();
+        return;
+      }
+
+      currentSceneId =
+        answer.nextSceneId ||
+        game.startSceneId;
+
+      renderScene();
+    }
+
+    function playAnswer(answer) {
+      const media = answer.transition;
+
+      if (
+        !media ||
+        media.type === "none" ||
+        !media.url
+      ) {
+        openNextScene(answer);
+        return;
+      }
+
+      const card =
+        document.querySelector(".card");
+
+      const layer =
+        document.createElement("div");
+
+      layer.className = "transition";
+      layer.style.backgroundColor =
+        getCardBackground();
+
+      if (media.type === "image") {
+        layer.style.backgroundImage =
+          `url("${directUrl(media.url)
+            .replace(/"/g, "%22")}")`;
+
+        card.appendChild(layer);
+
+        setTimeout(() => {
+          openNextScene(answer);
+        }, 1800);
+      }
+
+      if (media.type === "video") {
+        const video =
+          document.createElement("video");
+
+        video.className = "video";
+        video.src = directUrl(media.url);
+        video.autoplay = true;
+        video.controls = true;
+        video.playsInline = true;
+
+        video.addEventListener(
+          "ended",
+          () => openNextScene(answer)
+        );
+
+        layer.appendChild(video);
+        card.appendChild(layer);
+      }
+    }
+
+    renderScene();
+  </script>
+</body>
+</html>
