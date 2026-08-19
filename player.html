@@ -19,7 +19,6 @@
     body {
       margin: 0;
       min-height: 100%;
-
       overflow-x: hidden;
       background: transparent;
     }
@@ -49,7 +48,6 @@
       min-height: calc(100vh - 24px);
 
       overflow: hidden;
-
       border-radius: 18px;
 
       background-size: cover;
@@ -75,6 +73,10 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+    }
+
+    .card.has-progress .overlay {
+      padding-bottom: 76px;
     }
 
     .shade {
@@ -159,6 +161,91 @@
       padding: 20px;
       text-align: center;
     }
+
+    /*
+      Адаптивный прогресс-бар.
+    */
+
+    .progress {
+      position: absolute;
+
+      left: clamp(20px, 5vw, 48px);
+      right: clamp(20px, 5vw, 48px);
+      bottom: 20px;
+
+      z-index: 8;
+    }
+
+    .progress-row {
+      margin-bottom: 7px;
+
+      display: flex;
+      justify-content: space-between;
+
+      color: #f5f7ff;
+
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+
+      text-shadow: 0 1px 5px #000;
+    }
+
+    .progress-track {
+      height: 9px;
+      overflow: hidden;
+
+      border: 1px solid
+        rgba(255, 255, 255, 0.25);
+
+      border-radius: 999px;
+
+      background:
+        rgba(5, 9, 20, 0.55);
+
+      backdrop-filter: blur(5px);
+    }
+
+    .progress-fill {
+      height: 100%;
+
+      border-radius: 999px;
+
+      box-shadow:
+        0 0 14px currentColor;
+
+      transition: width 0.5s ease;
+    }
+
+    @media (max-width: 600px) {
+      #app {
+        padding: 0;
+      }
+
+      .card {
+        min-height: 100vh;
+        border-radius: 0;
+      }
+
+      .overlay {
+        padding: 22px;
+      }
+
+      .card.has-progress .overlay {
+        padding-bottom: 70px;
+      }
+
+      .progress {
+        left: 22px;
+        right: 22px;
+        bottom: 17px;
+      }
+
+      .progress-track {
+        height: 8px;
+      }
+    }
   </style>
 </head>
 
@@ -197,7 +284,7 @@
         .replace(/-/g, "+")
         .replace(/_/g, "/");
 
-      while (base64.length % 4 !== 0) {
+      while (base64.length % 4) {
         base64 += "=";
       }
 
@@ -303,37 +390,37 @@
       }
     }
 
-    function loadGame() {
-      try {
-        const encodedProject =
-          location.hash.slice(1);
+    let game;
 
-        if (!encodedProject) {
-          throw new Error(
-            "Game data is missing"
-          );
-        }
+    try {
+      game = decodeProject(
+        location.hash.slice(1)
+      );
+    } catch (error) {
+      console.error(error);
 
-        return decodeProject(
-          encodedProject
-        );
-      } catch (error) {
-        console.error(error);
+      app.innerHTML = `
+        <div class="message">
+          Game data could not be loaded.
+        </div>
+      `;
 
-        app.innerHTML = `
-          <div class="message">
-            Game data could not be loaded.
-          </div>
-        `;
-
-        throw error;
-      }
+      throw error;
     }
 
-    const game = loadGame();
+    /*
+      Для старых JSON-файлов,
+      созданных до появления прогресс-бара.
+    */
+
+    game.theme.showProgress =
+      game.theme.showProgress !== false;
 
     let currentSceneId =
       game.startSceneId;
+
+    let visitedScenes =
+      new Set([currentSceneId]);
 
     document.documentElement.lang =
       game.language || "ru";
@@ -354,7 +441,9 @@
         return "999px";
       }
 
-      if (game.theme.shape === "square") {
+      if (
+        game.theme.shape === "square"
+      ) {
         return "3px";
       }
 
@@ -365,6 +454,152 @@
       return game.theme.transparent
         ? "transparent"
         : game.theme.background;
+    }
+
+    /*
+      Поиск кратчайшего пути
+      от сцены до финала.
+    */
+
+    function getDistanceToFinish(
+      startSceneId
+    ) {
+      const queue = [
+        [startSceneId, 0]
+      ];
+
+      const checkedScenes = new Set();
+
+      while (queue.length > 0) {
+        const [
+          sceneId,
+          distance
+        ] = queue.shift();
+
+        if (
+          checkedScenes.has(sceneId)
+        ) {
+          continue;
+        }
+
+        checkedScenes.add(sceneId);
+
+        const scene =
+          game.scenes.find(
+            item => item.id === sceneId
+          );
+
+        if (!scene) {
+          continue;
+        }
+
+        const hasFinishAnswer =
+          scene.answers.some(
+            answer =>
+              answer.action === "finish" ||
+              answer.nextSceneId ===
+                "__finish__"
+          );
+
+        if (hasFinishAnswer) {
+          return distance + 1;
+        }
+
+        scene.answers.forEach(answer => {
+          if (
+            answer.action !== "finish" &&
+            answer.nextSceneId &&
+            !checkedScenes.has(
+              answer.nextSceneId
+            )
+          ) {
+            queue.push([
+              answer.nextSceneId,
+              distance + 1
+            ]);
+          }
+        });
+      }
+
+      return Math.max(
+        1,
+        game.scenes.length
+      );
+    }
+
+    function calculateProgress(
+      finished = false
+    ) {
+      if (finished) {
+        return 100;
+      }
+
+      const completedSteps =
+        Math.max(
+          0,
+          visitedScenes.size - 1
+        );
+
+      const remainingSteps =
+        getDistanceToFinish(
+          currentSceneId
+        );
+
+      if (completedSteps === 0) {
+        return 0;
+      }
+
+      const progress = Math.round(
+        completedSteps /
+        (
+          completedSteps +
+          remainingSteps
+        ) *
+        100
+      );
+
+      return Math.max(
+        5,
+        Math.min(95, progress)
+      );
+    }
+
+    function createProgressMarkup(
+      finished = false
+    ) {
+      if (!game.theme.showProgress) {
+        return "";
+      }
+
+      const progress =
+        calculateProgress(finished);
+
+      return `
+        <div
+          class="progress"
+          role="progressbar"
+          aria-label="Progress"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="${progress}"
+        >
+          <div class="progress-row">
+            <span>Progress</span>
+            <span>${progress}%</span>
+          </div>
+
+          <div class="progress-track">
+            <div
+              class="progress-fill"
+              style="
+                width:${progress}%;
+                background:${game.theme.accent};
+                color:${game.theme.accent};
+              "
+            ></div>
+          </div>
+        </div>
+      `;
     }
 
     function renderScene() {
@@ -416,7 +651,14 @@
 
       app.innerHTML = `
         <section
-          class="card"
+          class="
+            card
+            ${
+              game.theme.showProgress
+                ? "has-progress"
+                : ""
+            }
+          "
           style="
             background-color:
               ${getCardBackground()};
@@ -486,10 +728,13 @@
               <div class="answers">
                 ${scene.answers
                   .map(
-                    (answer, index) => `
+                    (
+                      answer,
+                      answerIndex
+                    ) => `
                       <button
                         class="answer"
-                        data-answer="${index}"
+                        data-answer="${answerIndex}"
                         style="
                           border-radius:
                             ${getButtonRadius()}
@@ -513,11 +758,15 @@
               </div>
             </div>
           </div>
+
+          ${createProgressMarkup(false)}
         </section>
       `;
 
       document
-        .querySelectorAll("[data-answer]")
+        .querySelectorAll(
+          "[data-answer]"
+        )
         .forEach(button => {
           button.addEventListener(
             "click",
@@ -567,7 +816,14 @@
 
       app.innerHTML = `
         <section
-          class="card"
+          class="
+            card
+            ${
+              game.theme.showProgress
+                ? "has-progress"
+                : ""
+            }
+          "
           style="
             background-color:
               ${getCardBackground()};
@@ -628,6 +884,8 @@
               </button>
             </div>
           </div>
+
+          ${createProgressMarkup(true)}
         </section>
       `;
 
@@ -641,6 +899,9 @@
         () => {
           currentSceneId =
             game.startSceneId;
+
+          visitedScenes =
+            new Set([currentSceneId]);
 
           renderScene();
         }
@@ -675,6 +936,13 @@
       currentSceneId =
         answer.nextSceneId ||
         game.startSceneId;
+
+      /*
+        Повторное посещение сцены
+        не увеличивает прогресс.
+      */
+
+      visitedScenes.add(currentSceneId);
 
       renderScene();
     }
