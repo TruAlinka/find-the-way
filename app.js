@@ -1,9 +1,7 @@
 "use strict";
 
-const STORAGE_KEY = "branchway-project-v6";
-
-const $ = selector =>
-  document.querySelector(selector);
+const STORAGE_KEY = "branchway-project-v7";
+const $ = selector => document.querySelector(selector);
 
 function createId(prefix) {
   return (
@@ -17,7 +15,7 @@ function createId(prefix) {
 
 function createDefaultProject() {
   return {
-    version: 6,
+    version: 7,
     title: "Lost in London",
     language: "ru",
     startSceneId: "scene-1",
@@ -28,7 +26,8 @@ function createDefaultProject() {
       accent: "#9bf6b0",
       shape: "soft",
       backgroundImage: "",
-      transparent: false
+      transparent: false,
+      showProgress: true
     },
 
     feedback: {
@@ -49,7 +48,6 @@ function createDefaultProject() {
 
         media: {
           type: "image",
-
           url:
             "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1200&q=80"
         },
@@ -86,9 +84,7 @@ function createDefaultProject() {
       {
         id: "scene-2",
         title: "The station",
-
-        task:
-          "Great! You found the station.",
+        task: "Great! You found the station.",
 
         media: {
           type: "none",
@@ -240,6 +236,9 @@ let project = loadProject();
 let activeSceneId = project.startSceneId;
 let playingSceneId = project.startSceneId;
 
+let previewVisitedScenes =
+  new Set([project.startSceneId]);
+
 const elements = {
   gameTitle: $("#gameTitle"),
 
@@ -282,10 +281,144 @@ const elements = {
   toast: $("#toast")
 };
 
+/*
+  Настройка прогресс-бара автоматически
+  добавляется в раздел оформления.
+  Поэтому index.html менять не нужно.
+*/
+
+function installProgressControls() {
+  const transparentOption =
+    elements.transparentBackground
+      ?.closest("label");
+
+  if (
+    !transparentOption ||
+    $("#showProgressBar")
+  ) {
+    return;
+  }
+
+  const progressOption =
+    document.createElement("label");
+
+  progressOption.className =
+    "checkbox-label wide";
+
+  progressOption.innerHTML = `
+    <input
+      id="showProgressBar"
+      type="checkbox"
+    >
+
+    <span>
+      Показывать прогресс-бар в игре
+    </span>
+  `;
+
+  transparentOption.insertAdjacentElement(
+    "afterend",
+    progressOption
+  );
+
+  elements.showProgress =
+    $("#showProgressBar");
+
+  elements.showProgress.addEventListener(
+    "change",
+    event => {
+      project.theme.showProgress =
+        event.target.checked;
+
+      refreshMiniPlayer();
+      saveProject();
+    }
+  );
+
+  /*
+    Стили прогресс-бара добавляются
+    автоматически в редактор.
+  */
+
+  const style =
+    document.createElement("style");
+
+  style.textContent = `
+    .player-progress {
+      position: absolute;
+      left: 18px;
+      right: 18px;
+      bottom: 14px;
+      z-index: 5;
+    }
+
+    .player-progress-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+
+      color: #eef2ff;
+
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+
+      text-shadow: 0 1px 4px #000;
+    }
+
+    .player-progress-track {
+      height: 7px;
+      overflow: hidden;
+
+      border: 1px solid
+        rgba(255, 255, 255, 0.22);
+
+      border-radius: 999px;
+
+      background:
+        rgba(5, 9, 20, 0.5);
+
+      backdrop-filter: blur(4px);
+    }
+
+    .player-progress-fill {
+      height: 100%;
+
+      border-radius: 999px;
+
+      background:
+        var(
+          --player-accent,
+          var(--accent)
+        );
+
+      box-shadow:
+        0 0 12px
+        var(
+          --player-accent,
+          var(--accent)
+        );
+
+      transition: width 0.45s ease;
+    }
+
+    .player.has-progress
+    .player-overlay {
+      padding-bottom: 58px;
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+
+installProgressControls();
+
 function getActiveScene() {
   return (
     project.scenes.find(
-      scene => scene.id === activeSceneId
+      scene =>
+        scene.id === activeSceneId
     ) ||
     project.scenes[0]
   );
@@ -326,21 +459,10 @@ function showToast(message) {
   }, 2200);
 }
 
-/*
-  Преобразование облачных ссылок.
-
-  Google Drive:
-  ссылка вида /file/d/FILE_ID/view
-  преобразуется в адрес изображения.
-
-  Dropbox:
-  dl=0 заменяется на raw=1.
-
-  OneDrive:
-  используется публичный content endpoint.
-*/
-
-function directMediaUrl(value, mediaType = "image") {
+function directMediaUrl(
+  value,
+  mediaType = "image"
+) {
   const originalUrl =
     String(value || "").trim();
 
@@ -352,7 +474,9 @@ function directMediaUrl(value, mediaType = "image") {
     const url = new URL(originalUrl);
 
     if (
-      url.hostname.includes("drive.google.com")
+      url.hostname.includes(
+        "drive.google.com"
+      )
     ) {
       let fileId = "";
 
@@ -387,7 +511,9 @@ function directMediaUrl(value, mediaType = "image") {
     }
 
     if (
-      url.hostname.includes("dropbox.com")
+      url.hostname.includes(
+        "dropbox.com"
+      )
     ) {
       url.searchParams.delete("dl");
       url.searchParams.set("raw", "1");
@@ -424,6 +550,144 @@ function directMediaUrl(value, mediaType = "image") {
   }
 }
 
+/*
+  Поиск кратчайшего оставшегося пути
+  от текущей сцены до финала.
+*/
+
+function getDistanceToFinish(
+  startSceneId
+) {
+  const queue = [
+    [startSceneId, 0]
+  ];
+
+  const checkedScenes = new Set();
+
+  while (queue.length > 0) {
+    const [
+      sceneId,
+      distance
+    ] = queue.shift();
+
+    if (
+      checkedScenes.has(sceneId)
+    ) {
+      continue;
+    }
+
+    checkedScenes.add(sceneId);
+
+    const scene =
+      project.scenes.find(
+        item => item.id === sceneId
+      );
+
+    if (!scene) {
+      continue;
+    }
+
+    const hasFinishAnswer =
+      scene.answers.some(
+        answer =>
+          answer.action === "finish" ||
+          answer.nextSceneId ===
+            "__finish__"
+      );
+
+    if (hasFinishAnswer) {
+      return distance + 1;
+    }
+
+    scene.answers.forEach(answer => {
+      if (
+        answer.action !== "finish" &&
+        answer.nextSceneId &&
+        !checkedScenes.has(
+          answer.nextSceneId
+        )
+      ) {
+        queue.push([
+          answer.nextSceneId,
+          distance + 1
+        ]);
+      }
+    });
+  }
+
+  return Math.max(
+    1,
+    project.scenes.length
+  );
+}
+
+function calculateProgress(
+  sceneId,
+  visitedScenes =
+    previewVisitedScenes,
+  finished = false
+) {
+  if (finished) {
+    return 100;
+  }
+
+  const completedSteps =
+    Math.max(
+      0,
+      visitedScenes.size - 1
+    );
+
+  const remainingSteps =
+    getDistanceToFinish(sceneId);
+
+  if (completedSteps === 0) {
+    return 0;
+  }
+
+  const progress = Math.round(
+    completedSteps /
+    (
+      completedSteps +
+      remainingSteps
+    ) *
+    100
+  );
+
+  return Math.max(
+    5,
+    Math.min(95, progress)
+  );
+}
+
+function createProgressMarkup(value) {
+  if (!project.theme.showProgress) {
+    return "";
+  }
+
+  return `
+    <div
+      class="player-progress"
+      role="progressbar"
+      aria-label="Progress"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow="${value}"
+    >
+      <div class="player-progress-row">
+        <span>Progress</span>
+        <span>${value}%</span>
+      </div>
+
+      <div class="player-progress-track">
+        <div
+          class="player-progress-fill"
+          style="width:${value}%"
+        ></div>
+      </div>
+    </div>
+  `;
+}
+
 function render() {
   const scene = getActiveScene();
 
@@ -437,17 +701,24 @@ function render() {
     project.theme.accent
   );
 
-  elements.gameTitle.value = project.title;
+  elements.gameTitle.value =
+    project.title;
 
   elements.sceneNumber.textContent =
     "СЦЕНА " +
-    String(sceneIndex + 1).padStart(2, "0");
+    String(sceneIndex + 1).padStart(
+      2,
+      "0"
+    );
 
   elements.sceneHeading.textContent =
     scene.title || "Без названия";
 
-  elements.sceneTitle.value = scene.title;
-  elements.sceneTask.value = scene.task;
+  elements.sceneTitle.value =
+    scene.title;
+
+  elements.sceneTask.value =
+    scene.task;
 
   elements.sceneMediaType.value =
     scene.media.type;
@@ -490,6 +761,11 @@ function render() {
   elements.transparentBackground.checked =
     project.theme.transparent;
 
+  if (elements.showProgress) {
+    elements.showProgress.checked =
+      project.theme.showProgress;
+  }
+
   renderSceneList();
   renderAnswers();
   renderMediaPreview();
@@ -497,7 +773,8 @@ function render() {
   renderPlayer(
     elements.miniPlayer,
     scene,
-    false
+    false,
+    new Set([project.startSceneId])
   );
 
   saveProject();
@@ -506,77 +783,90 @@ function render() {
 function renderSceneList() {
   elements.sceneList.innerHTML = "";
 
-  project.scenes.forEach((scene, index) => {
-    const button =
-      document.createElement("button");
+  project.scenes.forEach(
+    (scene, index) => {
+      const button =
+        document.createElement("button");
 
-    button.className =
-      "scene-card" +
-      (
-        scene.id === activeSceneId
-          ? " active"
-          : ""
+      button.className =
+        "scene-card" +
+        (
+          scene.id === activeSceneId
+            ? " active"
+            : ""
+        );
+
+      button.innerHTML = `
+        <span class="number">
+          ${String(index + 1).padStart(
+            2,
+            "0"
+          )}
+        </span>
+
+        <span>
+          <b>
+            ${escapeHtml(scene.title)}
+          </b>
+
+          <small>
+            ${scene.answers.length}
+            вариант(а)
+          </small>
+        </span>
+
+        ${
+          scene.id ===
+          project.startSceneId
+            ? '<span class="star">★</span>'
+            : "<span></span>"
+        }
+      `;
+
+      button.addEventListener(
+        "click",
+        () => {
+          activeSceneId = scene.id;
+          render();
+        }
       );
 
-    button.innerHTML = `
-      <span class="number">
-        ${String(index + 1).padStart(2, "0")}
-      </span>
-
-      <span>
-        <b>${escapeHtml(scene.title)}</b>
-
-        <small>
-          ${scene.answers.length} вариант(а)
-        </small>
-      </span>
-
-      ${
-        scene.id === project.startSceneId
-          ? '<span class="star">★</span>'
-          : "<span></span>"
-      }
-    `;
-
-    button.addEventListener("click", () => {
-      activeSceneId = scene.id;
-      render();
-    });
-
-    elements.sceneList.appendChild(button);
-  });
+      elements.sceneList.appendChild(
+        button
+      );
+    }
+  );
 }
 
 function renderMediaPreview() {
-  const scene = getActiveScene();
-  const media = scene.media;
+  const media =
+    getActiveScene().media;
 
-  const directUrl = directMediaUrl(
+  const mediaUrl = directMediaUrl(
     media.url,
     media.type
   );
 
-  elements.sceneMediaPreview.innerHTML = "";
+  elements.sceneMediaPreview.innerHTML =
+    "";
 
-  elements.sceneMediaStatus.textContent = "";
+  elements.sceneMediaStatus.textContent =
+    "";
 
   elements.sceneMediaStatus.className =
     "media-status";
 
   if (
     media.type === "none" ||
-    !directUrl
+    !mediaUrl
   ) {
     return;
   }
 
-  if (directUrl !== media.url) {
-    elements.sceneMediaStatus.textContent =
-      "Облачная ссылка преобразована в прямую.";
-  } else {
-    elements.sceneMediaStatus.textContent =
-      "Проверяем загрузку медиа…";
-  }
+  elements.sceneMediaStatus.textContent =
+    mediaUrl !== media.url
+      ? "Облачная ссылка преобразована в прямую."
+      : "Проверяем загрузку медиа…";
 
   const mediaElement =
     document.createElement(
@@ -585,7 +875,7 @@ function renderMediaPreview() {
         : "img"
     );
 
-  mediaElement.src = directUrl;
+  mediaElement.src = mediaUrl;
 
   if (media.type === "video") {
     mediaElement.controls = true;
@@ -615,7 +905,7 @@ function renderMediaPreview() {
     () => {
       elements.sceneMediaStatus.textContent =
         "Не удалось загрузить медиа. " +
-        "Проверьте публичный доступ к файлу.";
+        "Проверьте публичный доступ.";
 
       elements.sceneMediaStatus.className =
         "media-status error";
@@ -632,226 +922,272 @@ function renderAnswers() {
 
   elements.answerList.innerHTML = "";
 
-  scene.answers.forEach((answer, index) => {
-    const card =
-      document.createElement("article");
+  scene.answers.forEach(
+    (answer, index) => {
+      const card =
+        document.createElement("article");
 
-    card.className = "answer-card";
+      card.className = "answer-card";
 
-    const sceneOptions = project.scenes
-      .map(targetScene => {
-        const selected =
-          answer.action !== "finish" &&
-          targetScene.id ===
-            answer.nextSceneId
-            ? "selected"
-            : "";
-
-        return `
-          <option
-            value="${escapeHtml(
-              targetScene.id
-            )}"
-            ${selected}
-          >
-            ${escapeHtml(targetScene.title)}
-          </option>
-        `;
-      })
-      .join("");
-
-    card.innerHTML = `
-      <div class="answer-top">
-        <b>
-          ВАРИАНТ ${String(index + 1).padStart(2, "0")}
-        </b>
-
-        <button data-delete>
-          Удалить
-        </button>
-      </div>
-
-      <div class="answer-grid">
-        <label>
-          ИКОНКА
-
-          <input
-            data-icon
-            value="${escapeHtml(answer.icon)}"
-          >
-        </label>
-
-        <label>
-          ТЕКСТ ОТВЕТА
-
-          <input
-            data-text
-            value="${escapeHtml(answer.text)}"
-          >
-        </label>
-      </div>
-
-      <label>
-        ДЕЙСТВИЕ
-
-        <select data-next-scene>
-          ${sceneOptions}
-
-          <option
-            value="__finish__"
-            ${
-              answer.action === "finish"
+      const sceneOptions =
+        project.scenes
+          .map(targetScene => {
+            const selected =
+              answer.action !== "finish" &&
+              targetScene.id ===
+                answer.nextSceneId
                 ? "selected"
-                : ""
-            }
-          >
-            ★ Завершить игру
-          </option>
-        </select>
-      </label>
+                : "";
 
-      <div class="transition-grid">
+            return `
+              <option
+                value="${escapeHtml(
+                  targetScene.id
+                )}"
+                ${selected}
+              >
+                ${escapeHtml(
+                  targetScene.title
+                )}
+              </option>
+            `;
+          })
+          .join("");
+
+      card.innerHTML = `
+        <div class="answer-top">
+          <b>
+            ВАРИАНТ
+            ${String(index + 1).padStart(
+              2,
+              "0"
+            )}
+          </b>
+
+          <button data-delete>
+            Удалить
+          </button>
+        </div>
+
+        <div class="answer-grid">
+          <label>
+            ИКОНКА
+
+            <input
+              data-icon
+              value="${escapeHtml(
+                answer.icon
+              )}"
+            >
+          </label>
+
+          <label>
+            ТЕКСТ ОТВЕТА
+
+            <input
+              data-text
+              value="${escapeHtml(
+                answer.text
+              )}"
+            >
+          </label>
+        </div>
+
         <label>
-          МЕДИА ПЕРЕХОДА
+          ДЕЙСТВИЕ
 
-          <select data-transition-type>
+          <select data-next>
+            ${sceneOptions}
+
             <option
-              value="none"
+              value="__finish__"
               ${
-                answer.transition.type === "none"
+                answer.action === "finish"
                   ? "selected"
                   : ""
               }
             >
-              Без медиа
-            </option>
-
-            <option
-              value="image"
-              ${
-                answer.transition.type === "image"
-                  ? "selected"
-                  : ""
-              }
-            >
-              Изображение
-            </option>
-
-            <option
-              value="video"
-              ${
-                answer.transition.type === "video"
-                  ? "selected"
-                  : ""
-              }
-            >
-              Видео
+              ★ Завершить игру
             </option>
           </select>
         </label>
 
-        <label>
-          ССЫЛКА
+        <div class="transition-grid">
+          <label>
+            МЕДИА ПЕРЕХОДА
 
-          <input
-            data-transition-url
-            type="url"
-            value="${escapeHtml(
-              answer.transition.url
-            )}"
-            placeholder="Прямая или облачная ссылка"
-          >
-        </label>
-      </div>
-    `;
+            <select data-transition-type>
+              <option
+                value="none"
+                ${
+                  answer.transition.type ===
+                  "none"
+                    ? "selected"
+                    : ""
+                }
+              >
+                Без медиа
+              </option>
 
-    card
-      .querySelector("[data-icon]")
-      .addEventListener("input", event => {
-        answer.icon = event.target.value;
+              <option
+                value="image"
+                ${
+                  answer.transition.type ===
+                  "image"
+                    ? "selected"
+                    : ""
+                }
+              >
+                Изображение
+              </option>
 
-        refreshMiniPlayer();
-        saveProject();
-      });
+              <option
+                value="video"
+                ${
+                  answer.transition.type ===
+                  "video"
+                    ? "selected"
+                    : ""
+                }
+              >
+                Видео
+              </option>
+            </select>
+          </label>
 
-    card
-      .querySelector("[data-text]")
-      .addEventListener("input", event => {
-        answer.text = event.target.value;
+          <label>
+            ССЫЛКА
 
-        refreshMiniPlayer();
-        saveProject();
-      });
+            <input
+              data-transition-url
+              value="${escapeHtml(
+                answer.transition.url
+              )}"
+              placeholder="Прямая или облачная ссылка"
+            >
+          </label>
+        </div>
+      `;
 
-    card
-      .querySelector("[data-next-scene]")
-      .addEventListener("change", event => {
-        const value = event.target.value;
+      card
+        .querySelector("[data-icon]")
+        .addEventListener(
+          "input",
+          event => {
+            answer.icon =
+              event.target.value;
 
-        if (value === "__finish__") {
-          answer.action = "finish";
-          answer.nextSceneId = "__finish__";
-        } else {
-          answer.action = "scene";
-          answer.nextSceneId = value;
-        }
+            refreshMiniPlayer();
+            saveProject();
+          }
+        );
 
-        saveProject();
-      });
+      card
+        .querySelector("[data-text]")
+        .addEventListener(
+          "input",
+          event => {
+            answer.text =
+              event.target.value;
 
-    card
-      .querySelector("[data-transition-type]")
-      .addEventListener("change", event => {
-        answer.transition.type =
-          event.target.value;
+            refreshMiniPlayer();
+            saveProject();
+          }
+        );
 
-        saveProject();
-      });
+      card
+        .querySelector("[data-next]")
+        .addEventListener(
+          "change",
+          event => {
+            const value =
+              event.target.value;
 
-    card
-      .querySelector("[data-transition-url]")
-      .addEventListener("input", event => {
-        answer.transition.url =
-          event.target.value;
+            answer.action =
+              value === "__finish__"
+                ? "finish"
+                : "scene";
 
-        saveProject();
-      });
+            answer.nextSceneId = value;
 
-    card
-      .querySelector("[data-delete]")
-      .addEventListener("click", () => {
-        if (scene.answers.length === 1) {
-          showToast(
-            "Нужен хотя бы один вариант ответа"
-          );
+            saveProject();
+          }
+        );
 
-          return;
-        }
+      card
+        .querySelector(
+          "[data-transition-type]"
+        )
+        .addEventListener(
+          "change",
+          event => {
+            answer.transition.type =
+              event.target.value;
 
-        scene.answers =
-          scene.answers.filter(
-            item => item.id !== answer.id
-          );
+            saveProject();
+          }
+        );
 
-        render();
-      });
+      card
+        .querySelector(
+          "[data-transition-url]"
+        )
+        .addEventListener(
+          "input",
+          event => {
+            answer.transition.url =
+              event.target.value;
 
-    elements.answerList.appendChild(card);
-  });
+            saveProject();
+          }
+        );
+
+      card
+        .querySelector("[data-delete]")
+        .addEventListener(
+          "click",
+          () => {
+            if (
+              scene.answers.length === 1
+            ) {
+              showToast(
+                "Нужен хотя бы один вариант ответа"
+              );
+
+              return;
+            }
+
+            scene.answers =
+              scene.answers.filter(
+                item =>
+                  item.id !== answer.id
+              );
+
+            render();
+          }
+        );
+
+      elements.answerList.appendChild(
+        card
+      );
+    }
+  );
 }
 
 function refreshMiniPlayer() {
   renderPlayer(
     elements.miniPlayer,
     getActiveScene(),
-    false
+    false,
+    new Set([project.startSceneId])
   );
 }
 
 function renderPlayer(
   container,
   scene,
-  interactive
+  interactive,
+  visitedScenes = previewVisitedScenes
 ) {
   container.innerHTML = "";
 
@@ -877,6 +1213,11 @@ function renderPlayer(
       hasMedia
         ? " has-media"
         : ""
+    ) +
+    (
+      project.theme.showProgress
+        ? " has-progress"
+        : ""
     );
 
   player.style.setProperty(
@@ -896,29 +1237,31 @@ function renderPlayer(
     project.theme.font
   );
 
-  let imageUrl = "";
+  let backgroundImage = "";
 
   if (
     scene.media.type === "image" &&
     scene.media.url
   ) {
-    imageUrl = directMediaUrl(
-      scene.media.url,
-      "image"
-    );
+    backgroundImage =
+      directMediaUrl(
+        scene.media.url,
+        "image"
+      );
   } else if (
     !project.theme.transparent &&
     project.theme.backgroundImage
   ) {
-    imageUrl = directMediaUrl(
-      project.theme.backgroundImage,
-      "image"
-    );
+    backgroundImage =
+      directMediaUrl(
+        project.theme.backgroundImage,
+        "image"
+      );
   }
 
-  if (imageUrl) {
+  if (backgroundImage) {
     player.style.backgroundImage =
-      `url("${imageUrl.replace(
+      `url("${backgroundImage.replace(
         /"/g,
         "%22"
       )}")`;
@@ -956,7 +1299,9 @@ function renderPlayer(
 
   overlay.innerHTML = `
     <div class="player-top">
-      <span>${escapeHtml(project.title)}</span>
+      <span>
+        ${escapeHtml(project.title)}
+      </span>
 
       <span>
         ${sceneIndex + 1}
@@ -970,7 +1315,9 @@ function renderPlayer(
         ${escapeHtml(scene.title)}
       </span>
 
-      <h3>${escapeHtml(scene.task)}</h3>
+      <h3>
+        ${escapeHtml(scene.task)}
+      </h3>
 
       <div class="player-answers"></div>
     </div>
@@ -990,20 +1337,40 @@ function renderPlayer(
       project.theme.shape;
 
     button.innerHTML = `
-      <span>${escapeHtml(answer.icon)}</span>
-      <span>${escapeHtml(answer.text)}</span>
+      <span>
+        ${escapeHtml(answer.icon)}
+      </span>
+
+      <span>
+        ${escapeHtml(answer.text)}
+      </span>
     `;
 
     if (interactive) {
-      button.addEventListener("click", () => {
-        playAnswer(answer);
-      });
+      button.addEventListener(
+        "click",
+        () => {
+          playAnswer(answer);
+        }
+      );
     }
 
     answerContainer.appendChild(button);
   });
 
   player.appendChild(overlay);
+
+  const progress =
+    calculateProgress(
+      scene.id,
+      visitedScenes
+    );
+
+  player.insertAdjacentHTML(
+    "beforeend",
+    createProgressMarkup(progress)
+  );
+
   container.appendChild(player);
 }
 
@@ -1038,10 +1405,6 @@ function playAnswer(answer) {
       "image"
     );
 
-    transitionPlayer.classList.add(
-      "has-media"
-    );
-
     transitionPlayer.style.backgroundImage =
       `url("${imageUrl.replace(
         /"/g,
@@ -1070,9 +1433,12 @@ function playAnswer(answer) {
     video.controls = true;
     video.playsInline = true;
 
-    video.addEventListener("ended", () => {
-      openNextScene(answer);
-    });
+    video.addEventListener(
+      "ended",
+      () => {
+        openNextScene(answer);
+      }
+    );
 
     transitionPlayer.appendChild(video);
 
@@ -1095,6 +1461,10 @@ function openNextScene(answer) {
     answer.nextSceneId ||
     project.startSceneId;
 
+  previewVisitedScenes.add(
+    playingSceneId
+  );
+
   const scene =
     project.scenes.find(
       item => item.id === playingSceneId
@@ -1104,7 +1474,8 @@ function openNextScene(answer) {
   renderPlayer(
     elements.fullPlayer,
     scene,
-    true
+    true,
+    previewVisitedScenes
   );
 }
 
@@ -1114,10 +1485,11 @@ function showFinalFeedback() {
   const player =
     document.createElement("section");
 
-  const imageUrl = directMediaUrl(
-    feedback.image,
-    "image"
-  );
+  const imageUrl =
+    directMediaUrl(
+      feedback.image,
+      "image"
+    );
 
   elements.fullPlayer.innerHTML = "";
 
@@ -1131,6 +1503,11 @@ function showFinalFeedback() {
     (
       imageUrl
         ? " has-media"
+        : ""
+    ) +
+    (
+      project.theme.showProgress
+        ? " has-progress"
         : ""
     );
 
@@ -1189,28 +1566,37 @@ function showFinalFeedback() {
         </button>
       </div>
     </div>
+
+    ${createProgressMarkup(100)}
   `;
 
   elements.fullPlayer.appendChild(player);
 
   $("#restartGameButton")
-    .addEventListener("click", () => {
-      playingSceneId =
-        project.startSceneId;
+    .addEventListener(
+      "click",
+      () => {
+        playingSceneId =
+          project.startSceneId;
 
-      const startScene =
-        project.scenes.find(
-          item =>
-            item.id === playingSceneId
-        ) ||
-        project.scenes[0];
+        previewVisitedScenes =
+          new Set([playingSceneId]);
 
-      renderPlayer(
-        elements.fullPlayer,
-        startScene,
-        true
-      );
-    });
+        const startScene =
+          project.scenes.find(
+            item =>
+              item.id === playingSceneId
+          ) ||
+          project.scenes[0];
+
+        renderPlayer(
+          elements.fullPlayer,
+          startScene,
+          true,
+          previewVisitedScenes
+        );
+      }
+    );
 }
 
 function addScene() {
@@ -1230,7 +1616,8 @@ function addScene() {
         text: "Продолжить",
         icon: "→",
         action: "scene",
-        nextSceneId: project.startSceneId,
+        nextSceneId:
+          project.startSceneId,
 
         transition: {
           type: "none",
@@ -1255,7 +1642,8 @@ function deleteScene() {
     return;
   }
 
-  const deletedSceneId = activeSceneId;
+  const deletedSceneId =
+    activeSceneId;
 
   project.scenes =
     project.scenes.filter(
@@ -1293,23 +1681,72 @@ function deleteScene() {
   render();
 }
 
-function addAnswer() {
-  const scene = getActiveScene();
+function encodeProject() {
+  const json =
+    JSON.stringify(project);
 
-  scene.answers.push({
-    id: createId("answer"),
-    text: "Новый вариант",
-    icon: "→",
-    action: "scene",
-    nextSceneId: project.startSceneId,
+  return btoa(
+    unescape(
+      encodeURIComponent(json)
+    )
+  )
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
 
-    transition: {
-      type: "none",
-      url: ""
-    }
-  });
+function createPlayerUrl() {
+  if (location.protocol === "file:") {
+    return "";
+  }
 
-  render();
+  const playerUrl =
+    new URL(
+      "player.html",
+      location.href
+    );
+
+  playerUrl.hash = encodeProject();
+
+  return playerUrl.href;
+}
+
+function generateIframe() {
+  const playerUrl =
+    createPlayerUrl();
+
+  if (!playerUrl) {
+    elements.iframeStatus.textContent =
+      "Сначала опубликуйте проект через GitHub Pages.";
+
+    elements.iframeStatus.className =
+      "media-status error";
+
+    return "";
+  }
+
+  const iframeCode =
+`<iframe
+  src="${playerUrl}"
+  width="100%"
+  height="700"
+  title="${escapeHtml(project.title)}"
+  allow="autoplay; fullscreen"
+  allowfullscreen
+  loading="lazy"
+  style="display:block;width:100%;border:0;background:transparent;"
+></iframe>`;
+
+  elements.iframeCode.value =
+    iframeCode;
+
+  elements.iframeStatus.textContent =
+    "iframe готов. Внутри будет только игра.";
+
+  elements.iframeStatus.className =
+    "media-status success";
+
+  return iframeCode;
 }
 
 function downloadFile(
@@ -1347,81 +1784,7 @@ function slugify(value) {
   );
 }
 
-/*
-  Кодирование проекта для передачи
-  в player.html после символа #.
-*/
-
-function encodeProject() {
-  const json = JSON.stringify(project);
-
-  const base64 = btoa(
-    unescape(
-      encodeURIComponent(json)
-    )
-  );
-
-  return base64
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
-
-function createPlayerUrl() {
-  if (location.protocol === "file:") {
-    return "";
-  }
-
-  const playerUrl = new URL(
-    "player.html",
-    location.href
-  );
-
-  playerUrl.hash = encodeProject();
-
-  return playerUrl.href;
-}
-
-function generateIframe() {
-  const playerUrl = createPlayerUrl();
-
-  if (!playerUrl) {
-    elements.iframeStatus.textContent =
-      "Сначала опубликуйте index.html, " +
-      "styles.css, app.js и player.html " +
-      "через GitHub Pages.";
-
-    elements.iframeStatus.className =
-      "media-status error";
-
-    return "";
-  }
-
-  const iframeCode =
-`<iframe
-  src="${playerUrl}"
-  width="100%"
-  height="700"
-  title="${escapeHtml(project.title)}"
-  allow="autoplay; fullscreen"
-  allowfullscreen
-  loading="lazy"
-  style="display:block;width:100%;border:0;background:transparent;"
-></iframe>`;
-
-  elements.iframeCode.value =
-    iframeCode;
-
-  elements.iframeStatus.textContent =
-    "iframe готов. Внутри будет только игра, без редактора.";
-
-  elements.iframeStatus.className =
-    "media-status success";
-
-  return iframeCode;
-}
-
-/* Поля проекта */
+/* Основные поля */
 
 elements.gameTitle.addEventListener(
   "input",
@@ -1595,7 +1958,7 @@ elements.transparentBackground
     }
   );
 
-/* Сцены и ответы */
+/* Сцены */
 
 $("#addSceneButton").addEventListener(
   "click",
@@ -1609,7 +1972,23 @@ $("#deleteSceneButton").addEventListener(
 
 $("#addAnswerButton").addEventListener(
   "click",
-  addAnswer
+  () => {
+    getActiveScene().answers.push({
+      id: createId("answer"),
+      text: "Новый вариант",
+      icon: "→",
+      action: "scene",
+      nextSceneId:
+        project.startSceneId,
+
+      transition: {
+        type: "none",
+        url: ""
+      }
+    });
+
+    render();
+  }
 );
 
 elements.makeStartButton.addEventListener(
@@ -1627,11 +2006,9 @@ elements.makeStartButton.addEventListener(
 $("#newProjectButton").addEventListener(
   "click",
   () => {
-    const confirmed = confirm(
-      "Создать новый проект?"
-    );
-
-    if (!confirmed) {
+    if (
+      !confirm("Создать новый проект?")
+    ) {
       return;
     }
 
@@ -1642,6 +2019,9 @@ $("#newProjectButton").addEventListener(
 
     playingSceneId =
       project.startSceneId;
+
+    previewVisitedScenes =
+      new Set([playingSceneId]);
 
     elements.iframeCode.value = "";
 
@@ -1688,11 +2068,20 @@ $("#loadJsonInput").addEventListener(
           playingSceneId =
             project.startSceneId;
 
+          previewVisitedScenes =
+            new Set([playingSceneId]);
+
           render();
-          showToast("Проект загружен");
+
+          showToast(
+            "Проект загружен"
+          );
         } catch (error) {
           console.error(error);
-          showToast("Ошибка JSON-файла");
+
+          showToast(
+            "Ошибка JSON-файла"
+          );
         }
       }
     );
@@ -1710,6 +2099,9 @@ $("#previewButton").addEventListener(
     playingSceneId =
       project.startSceneId;
 
+    previewVisitedScenes =
+      new Set([playingSceneId]);
+
     const startScene =
       project.scenes.find(
         scene =>
@@ -1720,7 +2112,8 @@ $("#previewButton").addEventListener(
     renderPlayer(
       elements.fullPlayer,
       startScene,
-      true
+      true,
+      previewVisitedScenes
     );
 
     elements.previewModal.classList.toggle(
@@ -1731,11 +2124,6 @@ $("#previewButton").addEventListener(
     elements.previewModal.classList.add(
       "open"
     );
-
-    elements.previewModal.setAttribute(
-      "aria-hidden",
-      "false"
-    );
   }
 );
 
@@ -1744,11 +2132,6 @@ $("#closePreviewButton").addEventListener(
   () => {
     elements.previewModal.classList.remove(
       "open"
-    );
-
-    elements.previewModal.setAttribute(
-      "aria-hidden",
-      "true"
     );
   }
 );
@@ -1765,12 +2148,9 @@ $("#copyIframeButton")
   .addEventListener(
     "click",
     async () => {
-      let iframeCode =
-        elements.iframeCode.value.trim();
-
-      if (!iframeCode) {
-        iframeCode = generateIframe();
-      }
+      const iframeCode =
+        elements.iframeCode.value.trim() ||
+        generateIframe();
 
       if (!iframeCode) {
         return;
@@ -1794,7 +2174,8 @@ $("#copyIframeButton")
 $("#openPlayerButton").addEventListener(
   "click",
   () => {
-    const playerUrl = createPlayerUrl();
+    const playerUrl =
+      createPlayerUrl();
 
     if (!playerUrl) {
       showToast(
@@ -1811,7 +2192,5 @@ $("#openPlayerButton").addEventListener(
     );
   }
 );
-
-/* Первый запуск */
 
 render();
