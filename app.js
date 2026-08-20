@@ -1,6 +1,6 @@
 "use strict";
 
-const STORAGE_KEY = "branchway-project-v7";
+const STORAGE_KEY = "branchway-project-v8";
 const $ = selector => document.querySelector(selector);
 
 function createId(prefix) {
@@ -15,19 +15,24 @@ function createId(prefix) {
 
 function createDefaultProject() {
   return {
-    version: 7,
+    version: 8,
     title: "Lost in London",
     language: "ru",
     startSceneId: "scene-1",
 
     theme: {
-      font: "Arial, sans-serif",
+      headingFont: "Rye",
+      bodyFont: "Courier Prime",
+      cardStyle: "vintage",
+      answerStyle: "vintage",
+      shape: "soft",
+      borderColor: "#d8ae7b",
       background: "#10172d",
       accent: "#9bf6b0",
-      shape: "soft",
       backgroundImage: "",
       transparent: false,
-      showProgress: true
+      showProgress: true,
+      reduceMotion: false
     },
 
     feedback: {
@@ -48,8 +53,15 @@ function createDefaultProject() {
 
         media: {
           type: "image",
+
           url:
             "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=1200&q=80"
+        },
+
+        atmosphere: {
+          type: "none",
+          intensity: "medium",
+          duration: 1800
         },
 
         answers: [
@@ -91,6 +103,12 @@ function createDefaultProject() {
           url: ""
         },
 
+        atmosphere: {
+          type: "none",
+          intensity: "medium",
+          duration: 1800
+        },
+
         answers: [
           {
             id: "answer-3",
@@ -109,14 +127,20 @@ function createDefaultProject() {
 
       {
         id: "scene-3",
-        title: "A wrong turn",
+        title: "Wrong answer",
 
         task:
-          "This street is a dead end. Go back.",
+          "No, that is not the right way. Go back and try again.",
 
         media: {
           type: "none",
           url: ""
+        },
+
+        atmosphere: {
+          type: "fog",
+          intensity: "medium",
+          duration: 0
         },
 
         answers: [
@@ -154,13 +178,18 @@ function normalizeProject(project) {
     ...(project.theme || {})
   };
 
+  if (
+    project.theme.font &&
+    !project.theme.bodyFont
+  ) {
+    project.theme.bodyFont =
+      project.theme.font;
+  }
+
   project.feedback = {
     ...defaults.feedback,
     ...(project.feedback || {})
   };
-
-  project.language =
-    project.language || "ru";
 
   project.startSceneId =
     project.startSceneId ||
@@ -170,6 +199,13 @@ function normalizeProject(project) {
     scene.media = scene.media || {
       type: "none",
       url: ""
+    };
+
+    scene.atmosphere = {
+      type: "none",
+      intensity: "medium",
+      duration: 1800,
+      ...(scene.atmosphere || {})
     };
 
     if (
@@ -182,7 +218,8 @@ function normalizeProject(project) {
           text: "Продолжить",
           icon: "→",
           action: "scene",
-          nextSceneId: project.startSceneId,
+          nextSceneId:
+            project.startSceneId,
 
           transition: {
             type: "none",
@@ -236,8 +273,8 @@ let project = loadProject();
 let activeSceneId = project.startSceneId;
 let playingSceneId = project.startSceneId;
 
-let previewVisitedScenes =
-  new Set([project.startSceneId]);
+let visitedScenes =
+  new Set([playingSceneId]);
 
 const elements = {
   gameTitle: $("#gameTitle"),
@@ -253,6 +290,10 @@ const elements = {
   sceneMediaStatus: $("#sceneMediaStatus"),
   sceneMediaPreview: $("#sceneMediaPreview"),
 
+  sceneEffect: $("#sceneEffect"),
+  effectIntensity: $("#effectIntensity"),
+  effectDuration: $("#effectDuration"),
+
   answerList: $("#answerList"),
 
   feedbackTitle: $("#feedbackTitle"),
@@ -260,14 +301,25 @@ const elements = {
   restartText: $("#restartText"),
   feedbackImage: $("#feedbackImage"),
 
-  fontFamily: $("#fontFamily"),
+  headingFont: $("#headingFont"),
+  bodyFont: $("#bodyFont"),
+  cardStyle: $("#cardStyle"),
+  answerStyle: $("#answerStyle"),
   buttonShape: $("#buttonShape"),
+  borderColor: $("#borderColor"),
+
   backgroundColor: $("#backgroundColor"),
   accentColor: $("#accentColor"),
   backgroundImage: $("#backgroundImage"),
 
   transparentBackground:
     $("#transparentBackground"),
+
+  showProgressBar:
+    $("#showProgressBar"),
+
+  reduceMotion:
+    $("#reduceMotion"),
 
   makeStartButton: $("#makeStartButton"),
 
@@ -280,139 +332,6 @@ const elements = {
 
   toast: $("#toast")
 };
-
-/*
-  Настройка прогресс-бара автоматически
-  добавляется в раздел оформления.
-  Поэтому index.html менять не нужно.
-*/
-
-function installProgressControls() {
-  const transparentOption =
-    elements.transparentBackground
-      ?.closest("label");
-
-  if (
-    !transparentOption ||
-    $("#showProgressBar")
-  ) {
-    return;
-  }
-
-  const progressOption =
-    document.createElement("label");
-
-  progressOption.className =
-    "checkbox-label wide";
-
-  progressOption.innerHTML = `
-    <input
-      id="showProgressBar"
-      type="checkbox"
-    >
-
-    <span>
-      Показывать прогресс-бар в игре
-    </span>
-  `;
-
-  transparentOption.insertAdjacentElement(
-    "afterend",
-    progressOption
-  );
-
-  elements.showProgress =
-    $("#showProgressBar");
-
-  elements.showProgress.addEventListener(
-    "change",
-    event => {
-      project.theme.showProgress =
-        event.target.checked;
-
-      refreshMiniPlayer();
-      saveProject();
-    }
-  );
-
-  /*
-    Стили прогресс-бара добавляются
-    автоматически в редактор.
-  */
-
-  const style =
-    document.createElement("style");
-
-  style.textContent = `
-    .player-progress {
-      position: absolute;
-      left: 18px;
-      right: 18px;
-      bottom: 14px;
-      z-index: 5;
-    }
-
-    .player-progress-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 6px;
-
-      color: #eef2ff;
-
-      font-size: 9px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-
-      text-shadow: 0 1px 4px #000;
-    }
-
-    .player-progress-track {
-      height: 7px;
-      overflow: hidden;
-
-      border: 1px solid
-        rgba(255, 255, 255, 0.22);
-
-      border-radius: 999px;
-
-      background:
-        rgba(5, 9, 20, 0.5);
-
-      backdrop-filter: blur(4px);
-    }
-
-    .player-progress-fill {
-      height: 100%;
-
-      border-radius: 999px;
-
-      background:
-        var(
-          --player-accent,
-          var(--accent)
-        );
-
-      box-shadow:
-        0 0 12px
-        var(
-          --player-accent,
-          var(--accent)
-        );
-
-      transition: width 0.45s ease;
-    }
-
-    .player.has-progress
-    .player-overlay {
-      padding-bottom: 58px;
-    }
-  `;
-
-  document.head.appendChild(style);
-}
-
-installProgressControls();
 
 function getActiveScene() {
   return (
@@ -491,7 +410,8 @@ function directMediaUrl(
 
       if (!fileId) {
         fileId =
-          url.searchParams.get("id") || "";
+          url.searchParams.get("id") ||
+          "";
       }
 
       if (fileId) {
@@ -511,37 +431,12 @@ function directMediaUrl(
     }
 
     if (
-      url.hostname.includes(
-        "dropbox.com"
-      )
+      url.hostname.includes("dropbox.com")
     ) {
       url.searchParams.delete("dl");
       url.searchParams.set("raw", "1");
 
       return url.toString();
-    }
-
-    if (
-      url.hostname === "1drv.ms" ||
-      url.hostname.includes(
-        "onedrive.live.com"
-      )
-    ) {
-      const encodedShareUrl = btoa(
-        unescape(
-          encodeURIComponent(originalUrl)
-        )
-      )
-        .replace(/\//g, "_")
-        .replace(/\+/g, "-")
-        .replace(/=+$/, "");
-
-      return (
-        "https://api.onedrive.com/v1.0" +
-        "/shares/u!" +
-        encodedShareUrl +
-        "/root/content"
-      );
     }
 
     return originalUrl;
@@ -550,33 +445,19 @@ function directMediaUrl(
   }
 }
 
-/*
-  Поиск кратчайшего оставшегося пути
-  от текущей сцены до финала.
-*/
-
-function getDistanceToFinish(
-  startSceneId
-) {
-  const queue = [
-    [startSceneId, 0]
-  ];
-
-  const checkedScenes = new Set();
+function getDistanceToFinish(startSceneId) {
+  const queue = [[startSceneId, 0]];
+  const checked = new Set();
 
   while (queue.length > 0) {
-    const [
-      sceneId,
-      distance
-    ] = queue.shift();
+    const [sceneId, distance] =
+      queue.shift();
 
-    if (
-      checkedScenes.has(sceneId)
-    ) {
+    if (checked.has(sceneId)) {
       continue;
     }
 
-    checkedScenes.add(sceneId);
+    checked.add(sceneId);
 
     const scene =
       project.scenes.find(
@@ -587,7 +468,7 @@ function getDistanceToFinish(
       continue;
     }
 
-    const hasFinishAnswer =
+    const hasFinish =
       scene.answers.some(
         answer =>
           answer.action === "finish" ||
@@ -595,7 +476,7 @@ function getDistanceToFinish(
             "__finish__"
       );
 
-    if (hasFinishAnswer) {
+    if (hasFinish) {
       return distance + 1;
     }
 
@@ -603,9 +484,7 @@ function getDistanceToFinish(
       if (
         answer.action !== "finish" &&
         answer.nextSceneId &&
-        !checkedScenes.has(
-          answer.nextSceneId
-        )
+        !checked.has(answer.nextSceneId)
       ) {
         queue.push([
           answer.nextSceneId,
@@ -623,39 +502,32 @@ function getDistanceToFinish(
 
 function calculateProgress(
   sceneId,
-  visitedScenes =
-    previewVisitedScenes,
   finished = false
 ) {
   if (finished) {
     return 100;
   }
 
-  const completedSteps =
-    Math.max(
-      0,
-      visitedScenes.size - 1
-    );
+  const passed =
+    Math.max(0, visitedScenes.size - 1);
 
-  const remainingSteps =
-    getDistanceToFinish(sceneId);
-
-  if (completedSteps === 0) {
+  if (passed === 0) {
     return 0;
   }
 
-  const progress = Math.round(
-    completedSteps /
-    (
-      completedSteps +
-      remainingSteps
-    ) *
-    100
-  );
+  const remaining =
+    getDistanceToFinish(sceneId);
 
   return Math.max(
     5,
-    Math.min(95, progress)
+    Math.min(
+      95,
+      Math.round(
+        passed /
+        (passed + remaining) *
+        100
+      )
+    )
   );
 }
 
@@ -665,14 +537,7 @@ function createProgressMarkup(value) {
   }
 
   return `
-    <div
-      class="player-progress"
-      role="progressbar"
-      aria-label="Progress"
-      aria-valuemin="0"
-      aria-valuemax="100"
-      aria-valuenow="${value}"
-    >
+    <div class="player-progress">
       <div class="player-progress-row">
         <span>Progress</span>
         <span>${value}%</span>
@@ -686,6 +551,63 @@ function createProgressMarkup(value) {
       </div>
     </div>
   `;
+}
+
+function createEffectMarkup(atmosphere) {
+  if (
+    project.theme.reduceMotion ||
+    !atmosphere ||
+    atmosphere.type === "none" ||
+    atmosphere.type === "shake"
+  ) {
+    return "";
+  }
+
+  return `
+    <div
+      class="
+        effect-layer
+        effect-${atmosphere.type}
+        intensity-${atmosphere.intensity}
+      "
+    ></div>
+  `;
+}
+
+function applyTimedEffect(
+  player,
+  atmosphere
+) {
+  if (
+    project.theme.reduceMotion ||
+    !atmosphere ||
+    atmosphere.type === "none"
+  ) {
+    return;
+  }
+
+  if (atmosphere.type === "shake") {
+    player.classList.add(
+      "effect-shake"
+    );
+  }
+
+  if (Number(atmosphere.duration) > 0) {
+    setTimeout(() => {
+      const layer =
+        player.querySelector(
+          ".effect-layer"
+        );
+
+      if (layer) {
+        layer.remove();
+      }
+
+      player.classList.remove(
+        "effect-shake"
+      );
+    }, Number(atmosphere.duration));
+  }
 }
 
 function render() {
@@ -726,6 +648,15 @@ function render() {
   elements.sceneMediaUrl.value =
     scene.media.url;
 
+  elements.sceneEffect.value =
+    scene.atmosphere.type;
+
+  elements.effectIntensity.value =
+    scene.atmosphere.intensity;
+
+  elements.effectDuration.value =
+    String(scene.atmosphere.duration);
+
   elements.makeStartButton.textContent =
     scene.id === project.startSceneId
       ? "★ Стартовая сцена"
@@ -743,11 +674,23 @@ function render() {
   elements.feedbackImage.value =
     project.feedback.image;
 
-  elements.fontFamily.value =
-    project.theme.font;
+  elements.headingFont.value =
+    project.theme.headingFont;
+
+  elements.bodyFont.value =
+    project.theme.bodyFont;
+
+  elements.cardStyle.value =
+    project.theme.cardStyle;
+
+  elements.answerStyle.value =
+    project.theme.answerStyle;
 
   elements.buttonShape.value =
     project.theme.shape;
+
+  elements.borderColor.value =
+    project.theme.borderColor;
 
   elements.backgroundColor.value =
     project.theme.background;
@@ -761,10 +704,11 @@ function render() {
   elements.transparentBackground.checked =
     project.theme.transparent;
 
-  if (elements.showProgress) {
-    elements.showProgress.checked =
-      project.theme.showProgress;
-  }
+  elements.showProgressBar.checked =
+    project.theme.showProgress;
+
+  elements.reduceMotion.checked =
+    project.theme.reduceMotion;
 
   renderSceneList();
   renderAnswers();
@@ -773,8 +717,7 @@ function render() {
   renderPlayer(
     elements.miniPlayer,
     scene,
-    false,
-    new Set([project.startSceneId])
+    false
   );
 
   saveProject();
@@ -805,19 +748,16 @@ function renderSceneList() {
         </span>
 
         <span>
-          <b>
-            ${escapeHtml(scene.title)}
-          </b>
+          <b>${escapeHtml(scene.title)}</b>
 
           <small>
-            ${scene.answers.length}
-            вариант(а)
+            ${scene.answers.length} ответ(а)
+            · ${scene.atmosphere.type}
           </small>
         </span>
 
         ${
-          scene.id ===
-          project.startSceneId
+          scene.id === project.startSceneId
             ? '<span class="star">★</span>'
             : "<span></span>"
         }
@@ -839,8 +779,7 @@ function renderSceneList() {
 }
 
 function renderMediaPreview() {
-  const media =
-    getActiveScene().media;
+  const media = getActiveScene().media;
 
   const mediaUrl = directMediaUrl(
     media.url,
@@ -865,8 +804,8 @@ function renderMediaPreview() {
 
   elements.sceneMediaStatus.textContent =
     mediaUrl !== media.url
-      ? "Облачная ссылка преобразована в прямую."
-      : "Проверяем загрузку медиа…";
+      ? "Облачная ссылка преобразована."
+      : "Проверяем медиа…";
 
   const mediaElement =
     document.createElement(
@@ -884,7 +823,7 @@ function renderMediaPreview() {
 
   const handleLoaded = () => {
     elements.sceneMediaStatus.textContent =
-      "Медиа успешно загружено.";
+      "Медиа загружено.";
 
     elements.sceneMediaStatus.className =
       "media-status success";
@@ -904,7 +843,7 @@ function renderMediaPreview() {
     "error",
     () => {
       elements.sceneMediaStatus.textContent =
-        "Не удалось загрузить медиа. " +
+        "Не удалось загрузить. " +
         "Проверьте публичный доступ.";
 
       elements.sceneMediaStatus.className =
@@ -982,7 +921,7 @@ function renderAnswers() {
           </label>
 
           <label>
-            ТЕКСТ ОТВЕТА
+            ТЕКСТ
 
             <input
               data-text
@@ -1151,7 +1090,7 @@ function renderAnswers() {
               scene.answers.length === 1
             ) {
               showToast(
-                "Нужен хотя бы один вариант ответа"
+                "Нужен хотя бы один ответ"
               );
 
               return;
@@ -1178,16 +1117,14 @@ function refreshMiniPlayer() {
   renderPlayer(
     elements.miniPlayer,
     getActiveScene(),
-    false,
-    new Set([project.startSceneId])
+    false
   );
 }
 
 function renderPlayer(
   container,
   scene,
-  interactive,
-  visitedScenes = previewVisitedScenes
+  interactive
 ) {
   container.innerHTML = "";
 
@@ -1221,7 +1158,7 @@ function renderPlayer(
     );
 
   player.style.setProperty(
-    "--player-background",
+    "--player-bg",
     project.theme.transparent
       ? "transparent"
       : project.theme.background
@@ -1233,8 +1170,18 @@ function renderPlayer(
   );
 
   player.style.setProperty(
-    "--player-font",
-    project.theme.font
+    "--heading-font",
+    `"${project.theme.headingFont}"`
+  );
+
+  player.style.setProperty(
+    "--body-font",
+    `"${project.theme.bodyFont}"`
+  );
+
+  player.style.setProperty(
+    "--border-color",
+    project.theme.borderColor
   );
 
   let backgroundImage = "";
@@ -1310,7 +1257,12 @@ function renderPlayer(
       </span>
     </div>
 
-    <div>
+    <div
+      class="
+        story-card
+        card-${project.theme.cardStyle}
+      "
+    >
       <span class="scene-label">
         ${escapeHtml(scene.title)}
       </span>
@@ -1333,8 +1285,9 @@ function renderPlayer(
       document.createElement("button");
 
     button.className =
-      "player-answer shape-" +
-      project.theme.shape;
+      "player-answer " +
+      `answer-${project.theme.answerStyle} ` +
+      `shape-${project.theme.shape}`;
 
     button.innerHTML = `
       <span>
@@ -1360,18 +1313,22 @@ function renderPlayer(
 
   player.appendChild(overlay);
 
-  const progress =
-    calculateProgress(
-      scene.id,
-      visitedScenes
-    );
-
   player.insertAdjacentHTML(
     "beforeend",
-    createProgressMarkup(progress)
+    createEffectMarkup(
+      scene.atmosphere
+    ) +
+    createProgressMarkup(
+      calculateProgress(scene.id)
+    )
   );
 
   container.appendChild(player);
+
+  applyTimedEffect(
+    player,
+    scene.atmosphere
+  );
 }
 
 function playAnswer(answer) {
@@ -1392,18 +1349,14 @@ function playAnswer(answer) {
     document.createElement("section");
 
   transitionPlayer.className =
-    "player" +
-    (
-      project.theme.transparent
-        ? " transparent"
-        : ""
-    );
+    "player";
 
   if (media.type === "image") {
-    const imageUrl = directMediaUrl(
-      media.url,
-      "image"
-    );
+    const imageUrl =
+      directMediaUrl(
+        media.url,
+        "image"
+      );
 
     transitionPlayer.style.backgroundImage =
       `url("${imageUrl.replace(
@@ -1461,21 +1414,23 @@ function openNextScene(answer) {
     answer.nextSceneId ||
     project.startSceneId;
 
-  previewVisitedScenes.add(
-    playingSceneId
-  );
+  visitedScenes.add(playingSceneId);
 
-  const scene =
+  const nextScene =
     project.scenes.find(
-      item => item.id === playingSceneId
+      scene =>
+        scene.id === playingSceneId
     ) ||
     project.scenes[0];
 
+  /*
+    Эффект берётся у новой сцены.
+  */
+
   renderPlayer(
     elements.fullPlayer,
-    scene,
-    true,
-    previewVisitedScenes
+    nextScene,
+    true
   );
 }
 
@@ -1512,7 +1467,7 @@ function showFinalFeedback() {
     );
 
   player.style.setProperty(
-    "--player-background",
+    "--player-bg",
     project.theme.transparent
       ? "transparent"
       : project.theme.background
@@ -1524,8 +1479,18 @@ function showFinalFeedback() {
   );
 
   player.style.setProperty(
-    "--player-font",
-    project.theme.font
+    "--heading-font",
+    `"${project.theme.headingFont}"`
+  );
+
+  player.style.setProperty(
+    "--body-font",
+    `"${project.theme.bodyFont}"`
+  );
+
+  player.style.setProperty(
+    "--border-color",
+    project.theme.borderColor
   );
 
   if (imageUrl) {
@@ -1540,7 +1505,12 @@ function showFinalFeedback() {
     <div class="player-overlay">
       <div></div>
 
-      <div>
+      <div
+        class="
+          story-card
+          card-${project.theme.cardStyle}
+        "
+      >
         <span class="scene-label">
           FINISH
         </span>
@@ -1557,6 +1527,7 @@ function showFinalFeedback() {
           id="restartGameButton"
           class="
             player-answer
+            answer-${project.theme.answerStyle}
             shape-${project.theme.shape}
           "
         >
@@ -1579,28 +1550,27 @@ function showFinalFeedback() {
         playingSceneId =
           project.startSceneId;
 
-        previewVisitedScenes =
+        visitedScenes =
           new Set([playingSceneId]);
 
         const startScene =
           project.scenes.find(
-            item =>
-              item.id === playingSceneId
+            scene =>
+              scene.id === playingSceneId
           ) ||
           project.scenes[0];
 
         renderPlayer(
           elements.fullPlayer,
           startScene,
-          true,
-          previewVisitedScenes
+          true
         );
       }
     );
 }
 
 function addScene() {
-  const scene = {
+  const newScene = {
     id: createId("scene"),
     title: "Новая сцена",
     task: "Введите задание.",
@@ -1608,6 +1578,12 @@ function addScene() {
     media: {
       type: "none",
       url: ""
+    },
+
+    atmosphere: {
+      type: "none",
+      intensity: "medium",
+      duration: 1800
     },
 
     answers: [
@@ -1627,8 +1603,8 @@ function addScene() {
     ]
   };
 
-  project.scenes.push(scene);
-  activeSceneId = scene.id;
+  project.scenes.push(newScene);
+  activeSceneId = newScene.id;
 
   render();
 }
@@ -1642,13 +1618,13 @@ function deleteScene() {
     return;
   }
 
-  const deletedSceneId =
+  const deletedId =
     activeSceneId;
 
   project.scenes =
     project.scenes.filter(
       scene =>
-        scene.id !== deletedSceneId
+        scene.id !== deletedId
     );
 
   const fallbackScene =
@@ -1657,8 +1633,7 @@ function deleteScene() {
   project.scenes.forEach(scene => {
     scene.answers.forEach(answer => {
       if (
-        answer.nextSceneId ===
-        deletedSceneId
+        answer.nextSceneId === deletedId
       ) {
         answer.nextSceneId =
           fallbackScene.id;
@@ -1669,25 +1644,24 @@ function deleteScene() {
   });
 
   if (
-    project.startSceneId ===
-    deletedSceneId
+    project.startSceneId === deletedId
   ) {
     project.startSceneId =
       fallbackScene.id;
   }
 
-  activeSceneId = fallbackScene.id;
+  activeSceneId =
+    fallbackScene.id;
 
   render();
 }
 
 function encodeProject() {
-  const json =
-    JSON.stringify(project);
-
   return btoa(
     unescape(
-      encodeURIComponent(json)
+      encodeURIComponent(
+        JSON.stringify(project)
+      )
     )
   )
     .replace(/\+/g, "-")
@@ -1741,7 +1715,7 @@ function generateIframe() {
     iframeCode;
 
   elements.iframeStatus.textContent =
-    "iframe готов. Внутри будет только игра.";
+    "iframe готов: внутри будет только игра.";
 
   elements.iframeStatus.className =
     "media-status success";
@@ -1784,7 +1758,7 @@ function slugify(value) {
   );
 }
 
-/* Основные поля */
+/* Содержимое сцены */
 
 elements.gameTitle.addEventListener(
   "input",
@@ -1848,6 +1822,41 @@ elements.sceneMediaUrl.addEventListener(
   }
 );
 
+/* Эффект сцены */
+
+elements.sceneEffect.addEventListener(
+  "change",
+  event => {
+    getActiveScene().atmosphere.type =
+      event.target.value;
+
+    refreshMiniPlayer();
+    saveProject();
+  }
+);
+
+elements.effectIntensity.addEventListener(
+  "change",
+  event => {
+    getActiveScene().atmosphere.intensity =
+      event.target.value;
+
+    refreshMiniPlayer();
+    saveProject();
+  }
+);
+
+elements.effectDuration.addEventListener(
+  "change",
+  event => {
+    getActiveScene().atmosphere.duration =
+      Number(event.target.value);
+
+    refreshMiniPlayer();
+    saveProject();
+  }
+);
+
 /* Финальный фидбек */
 
 elements.feedbackTitle.addEventListener(
@@ -1892,10 +1901,43 @@ elements.feedbackImage.addEventListener(
 
 /* Оформление */
 
-elements.fontFamily.addEventListener(
+elements.headingFont.addEventListener(
   "change",
   event => {
-    project.theme.font =
+    project.theme.headingFont =
+      event.target.value;
+
+    refreshMiniPlayer();
+    saveProject();
+  }
+);
+
+elements.bodyFont.addEventListener(
+  "change",
+  event => {
+    project.theme.bodyFont =
+      event.target.value;
+
+    refreshMiniPlayer();
+    saveProject();
+  }
+);
+
+elements.cardStyle.addEventListener(
+  "change",
+  event => {
+    project.theme.cardStyle =
+      event.target.value;
+
+    refreshMiniPlayer();
+    saveProject();
+  }
+);
+
+elements.answerStyle.addEventListener(
+  "change",
+  event => {
+    project.theme.answerStyle =
       event.target.value;
 
     refreshMiniPlayer();
@@ -1907,6 +1949,17 @@ elements.buttonShape.addEventListener(
   "change",
   event => {
     project.theme.shape =
+      event.target.value;
+
+    refreshMiniPlayer();
+    saveProject();
+  }
+);
+
+elements.borderColor.addEventListener(
+  "input",
+  event => {
+    project.theme.borderColor =
       event.target.value;
 
     refreshMiniPlayer();
@@ -1958,7 +2011,29 @@ elements.transparentBackground
     }
   );
 
-/* Сцены */
+elements.showProgressBar.addEventListener(
+  "change",
+  event => {
+    project.theme.showProgress =
+      event.target.checked;
+
+    refreshMiniPlayer();
+    saveProject();
+  }
+);
+
+elements.reduceMotion.addEventListener(
+  "change",
+  event => {
+    project.theme.reduceMotion =
+      event.target.checked;
+
+    refreshMiniPlayer();
+    saveProject();
+  }
+);
+
+/* Кнопки */
 
 $("#addSceneButton").addEventListener(
   "click",
@@ -1978,6 +2053,7 @@ $("#addAnswerButton").addEventListener(
       text: "Новый вариант",
       icon: "→",
       action: "scene",
+
       nextSceneId:
         project.startSceneId,
 
@@ -2001,8 +2077,6 @@ elements.makeStartButton.addEventListener(
   }
 );
 
-/* Новый проект */
-
 $("#newProjectButton").addEventListener(
   "click",
   () => {
@@ -2012,7 +2086,8 @@ $("#newProjectButton").addEventListener(
       return;
     }
 
-    project = createDefaultProject();
+    project =
+      createDefaultProject();
 
     activeSceneId =
       project.startSceneId;
@@ -2020,16 +2095,12 @@ $("#newProjectButton").addEventListener(
     playingSceneId =
       project.startSceneId;
 
-    previewVisitedScenes =
+    visitedScenes =
       new Set([playingSceneId]);
-
-    elements.iframeCode.value = "";
 
     render();
   }
 );
-
-/* JSON */
 
 $("#saveJsonButton").addEventListener(
   "click",
@@ -2058,9 +2129,10 @@ $("#loadJsonInput").addEventListener(
       "load",
       () => {
         try {
-          project = normalizeProject(
-            JSON.parse(reader.result)
-          );
+          project =
+            normalizeProject(
+              JSON.parse(reader.result)
+            );
 
           activeSceneId =
             project.startSceneId;
@@ -2068,20 +2140,14 @@ $("#loadJsonInput").addEventListener(
           playingSceneId =
             project.startSceneId;
 
-          previewVisitedScenes =
+          visitedScenes =
             new Set([playingSceneId]);
 
           render();
-
-          showToast(
-            "Проект загружен"
-          );
+          showToast("Проект загружен");
         } catch (error) {
           console.error(error);
-
-          showToast(
-            "Ошибка JSON-файла"
-          );
+          showToast("Ошибка JSON");
         }
       }
     );
@@ -2091,15 +2157,13 @@ $("#loadJsonInput").addEventListener(
   }
 );
 
-/* Предпросмотр */
-
 $("#previewButton").addEventListener(
   "click",
   () => {
     playingSceneId =
       project.startSceneId;
 
-    previewVisitedScenes =
+    visitedScenes =
       new Set([playingSceneId]);
 
     const startScene =
@@ -2112,8 +2176,7 @@ $("#previewButton").addEventListener(
     renderPlayer(
       elements.fullPlayer,
       startScene,
-      true,
-      previewVisitedScenes
+      true
     );
 
     elements.previewModal.classList.toggle(
@@ -2135,8 +2198,6 @@ $("#closePreviewButton").addEventListener(
     );
   }
 );
-
-/* iframe */
 
 $("#generateIframeButton")
   .addEventListener(
@@ -2177,19 +2238,17 @@ $("#openPlayerButton").addEventListener(
     const playerUrl =
       createPlayerUrl();
 
-    if (!playerUrl) {
-      showToast(
-        "Сначала опубликуйте проект через GitHub Pages"
+    if (playerUrl) {
+      window.open(
+        playerUrl,
+        "_blank",
+        "noopener"
       );
-
-      return;
+    } else {
+      showToast(
+        "Сначала опубликуйте GitHub Pages"
+      );
     }
-
-    window.open(
-      playerUrl,
-      "_blank",
-      "noopener"
-    );
   }
 );
 
