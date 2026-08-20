@@ -1,12 +1,15 @@
+@import url(
+  "https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Roboto+Slab:wght@400;700&family=Rye&family=Special+Elite&display=swap"
+);
+
 :root {
-  --page-background: #090f1e;
+  --page: #090f1e;
   --panel: #111a31;
-  --dark-panel: #0d1529;
+  --dark: #0d1529;
   --line: rgba(255, 255, 255, 0.1);
   --text: #f5f7ff;
   --muted: #7f8ba7;
   --accent: #9bf6b0;
-  --danger: #ff8d9e;
 }
 
 * {
@@ -35,7 +38,7 @@ body {
       #273963,
       transparent 36%
     ),
-    var(--page-background);
+    var(--page);
 
   font-family: Arial, sans-serif;
 }
@@ -65,7 +68,7 @@ button,
 
 button:hover,
 .file-button:hover {
-  border-color: rgba(155, 246, 176, 0.5);
+  border-color: rgba(155, 246, 176, 0.47);
 }
 
 .primary {
@@ -75,21 +78,21 @@ button:hover,
 }
 
 .danger {
-  color: var(--danger);
+  color: #ff8d9e;
 }
 
 .topbar {
   min-height: 76px;
   padding: 14px 24px;
 
-  position: sticky;
-  top: 0;
-  z-index: 20;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
+
+  position: sticky;
+  top: 0;
+  z-index: 30;
 
   border-bottom: 1px solid var(--line);
 
@@ -148,7 +151,6 @@ button:hover,
 .file-button input {
   position: absolute;
   inset: 0;
-
   opacity: 0;
   cursor: pointer;
 }
@@ -202,16 +204,10 @@ button:hover,
   border-inline: 1px solid var(--line);
 }
 
-/*
-  У редактора нет фиксированной высоты.
-  При добавлении ответов вся страница
-  увеличивается и нормально прокручивается.
-*/
-
 .scenes-panel,
 .preview-panel {
   padding: 22px 15px;
-  background: var(--dark-panel);
+  background: var(--dark);
 }
 
 .scenes-panel {
@@ -263,7 +259,6 @@ label {
   width: 100%;
 
   display: grid;
-
   grid-template-columns:
     25px
     minmax(0, 1fr)
@@ -279,7 +274,7 @@ label {
 }
 
 .scene-card.active {
-  border-color: rgba(155, 246, 176, 0.35);
+  border-color: rgba(155, 246, 176, 0.33);
   background: rgba(155, 246, 176, 0.06);
 }
 
@@ -347,7 +342,7 @@ select {
   outline: 0;
 
   color: #fff;
-  background: var(--dark-panel);
+  background: var(--dark);
 
   font-size: 12px;
 }
@@ -355,7 +350,7 @@ select {
 input:focus,
 textarea:focus,
 select:focus {
-  border-color: rgba(155, 246, 176, 0.55);
+  border-color: rgba(155, 246, 176, 0.53);
 }
 
 textarea {
@@ -365,7 +360,10 @@ textarea {
 
 .two-columns {
   display: grid;
-  grid-template-columns: 140px minmax(0, 1fr);
+  grid-template-columns:
+    140px
+    minmax(0, 1fr);
+
   gap: 8px;
 }
 
@@ -424,7 +422,7 @@ textarea {
   border: 1px solid var(--line);
   border-radius: 10px;
 
-  background: var(--dark-panel);
+  background: var(--dark);
 }
 
 .answer-top {
@@ -444,19 +442,25 @@ textarea {
   padding: 5px;
   border: 0;
 
-  color: var(--danger);
+  color: #ff8d9e;
   background: transparent;
 }
 
 .answer-grid {
   display: grid;
-  grid-template-columns: 70px minmax(0, 1fr);
+  grid-template-columns:
+    70px
+    minmax(0, 1fr);
+
   gap: 8px;
 }
 
 .transition-grid {
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr);
+  grid-template-columns:
+    150px
+    minmax(0, 1fr);
+
   gap: 8px;
 }
 
@@ -464,7 +468,8 @@ textarea {
   margin-bottom: 12px;
 }
 
-.settings-panel {
+.settings-panel,
+.scene-effect-panel {
   margin-top: 30px;
   padding: 18px;
 
@@ -474,7 +479,15 @@ textarea {
   background: rgba(255, 255, 255, 0.02);
 }
 
-.settings-panel h2 {
+.scene-effect-panel {
+  margin: 5px 0 28px;
+
+  border-color: rgba(155, 246, 176, 0.21);
+  background: rgba(155, 246, 176, 0.03);
+}
+
+.settings-panel h2,
+.scene-effect-panel h2 {
   margin: 0 0 8px;
   font-size: 17px;
 }
@@ -502,12 +515,10 @@ textarea {
   border-radius: 8px;
 
   color: #dce2f2;
-  background: var(--dark-panel);
+  background: var(--dark);
 
   font-size: 11px;
   letter-spacing: 0;
-
-  cursor: pointer;
 }
 
 .checkbox-label input {
@@ -543,24 +554,22 @@ textarea {
   font-size: 10px;
 }
 
-.iframe-panel .media-status {
-  margin-top: 5px;
-}
-
 .preview-panel h2 {
   margin-top: 6px;
 }
 
+/* Проигрыватель */
+
 .player {
-  min-height: 480px;
   position: relative;
+  min-height: 480px;
   overflow: hidden;
 
   border: 1px solid var(--line);
   border-radius: 15px;
 
   background-color:
-    var(--player-background, #111a31);
+    var(--player-bg, #111a31);
 
   background-size: cover;
   background-position: center;
@@ -569,7 +578,7 @@ textarea {
     0 20px 60px rgba(0, 0, 0, 0.4);
 
   font-family:
-    var(--player-font, Arial, sans-serif);
+    var(--body-font, Arial, sans-serif);
 }
 
 .player.transparent {
@@ -577,12 +586,12 @@ textarea {
   box-shadow: none;
 }
 
-.player video {
-  width: 100%;
-  height: 100%;
-
+.player > video {
   position: absolute;
   inset: 0;
+
+  width: 100%;
+  height: 100%;
 
   object-fit: cover;
 }
@@ -609,6 +618,16 @@ textarea {
   background: transparent;
 }
 
+.player h3 {
+  margin: 8px 0 17px;
+
+  font-family:
+    var(--heading-font, Georgia, serif);
+
+  font-size: 24px;
+  line-height: 1.16;
+}
+
 .player-top {
   display: flex;
   justify-content: space-between;
@@ -621,7 +640,8 @@ textarea {
 }
 
 .scene-label {
-  color: var(--player-accent, var(--accent));
+  color:
+    var(--player-accent, var(--accent));
 
   font-size: 9px;
   font-weight: 900;
@@ -629,20 +649,83 @@ textarea {
   text-transform: uppercase;
 }
 
-.player h3 {
-  margin: 8px 0 17px;
+/* Карточки */
 
-  font-size: 24px;
-  line-height: 1.08;
+.story-card {
+  padding: 18px;
 }
 
-.player p {
-  line-height: 1.55;
+.card-none {
+  padding: 0;
 }
+
+.card-vintage {
+  border: 3px solid
+    var(--border-color, #d8ae7b);
+
+  border-radius: 16px;
+
+  color: #f7e4c8;
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(20, 11, 8, 0.96),
+      rgba(35, 18, 12, 0.93)
+    );
+
+  box-shadow:
+    0 15px 40px rgba(0, 0, 0, 0.67),
+    inset 0 0 30px rgba(111, 55, 26, 0.2);
+}
+
+.card-glass {
+  border: 1px solid
+    rgba(255, 255, 255, 0.33);
+
+  border-radius: 18px;
+
+  background:
+    rgba(255, 255, 255, 0.09);
+
+  box-shadow:
+    0 15px 40px rgba(0, 0, 0, 0.4);
+
+  backdrop-filter: blur(12px);
+}
+
+.card-neon {
+  border: 2px solid
+    var(--border-color, #66ccff);
+
+  border-radius: 12px;
+
+  background:
+    rgba(6, 11, 24, 0.86);
+
+  box-shadow:
+    0 0 10px
+      var(--border-color, #66ccff),
+    inset 0 0 18px #000;
+}
+
+.card-parchment {
+  border: 2px solid #79552f;
+  border-radius: 4px;
+
+  color: #332414;
+  background: rgba(234, 215, 171, 0.92);
+
+  box-shadow:
+    0 12px 35px rgba(0, 0, 0, 0.53);
+}
+
+/* Ответы */
 
 .player-answers {
   display: grid;
-  gap: 7px;
+  gap: 8px;
+  margin-top: 16px;
 }
 
 .player-answer {
@@ -653,16 +736,67 @@ textarea {
   align-items: center;
   gap: 9px;
 
-  border: 1px solid rgba(255, 255, 255, 0.2);
-
   color: #fff;
-  background: rgba(17, 24, 39, 0.74);
+  background:
+    rgba(17, 24, 39, 0.74);
 
   text-align: left;
 }
 
+.answer-standard {
+  border: 1px solid
+    rgba(255, 255, 255, 0.2);
+}
+
+.answer-vintage {
+  border: 2px solid
+    var(--border-color, #d8ae7b);
+
+  color: #f7e4c8;
+  background: rgba(26, 13, 9, 0.91);
+}
+
+.answer-double {
+  border: 4px double
+    var(--border-color, #d8ae7b);
+
+  background:
+    rgba(17, 24, 39, 0.79);
+}
+
+.answer-neon {
+  border: 1px solid
+    var(--border-color, #66ccff);
+
+  background:
+    rgba(7, 16, 29, 0.9);
+
+  box-shadow:
+    0 0 7px
+      var(--border-color, #66ccff);
+}
+
+.answer-dashed {
+  border: 2px dashed
+    var(--border-color, #d8ae7b);
+
+  background:
+    rgba(17, 24, 39, 0.67);
+}
+
+.answer-text {
+  border: 0;
+
+  border-bottom: 1px solid
+    var(--border-color, #fff);
+
+  border-radius: 0 !important;
+  background: transparent;
+}
+
 .player-answer:hover {
   color: #101827;
+
   background:
     var(--player-accent, var(--accent));
 }
@@ -679,6 +813,257 @@ textarea {
   border-radius: 3px;
 }
 
+/* Прогресс */
+
+.player-progress {
+  position: absolute;
+
+  left: 18px;
+  right: 18px;
+  bottom: 14px;
+
+  z-index: 22;
+}
+
+.player-progress-row {
+  display: flex;
+  justify-content: space-between;
+
+  margin-bottom: 6px;
+
+  font-size: 9px;
+  font-weight: 800;
+
+  text-shadow: 0 1px 4px #000;
+}
+
+.player-progress-track {
+  height: 7px;
+  overflow: hidden;
+
+  border: 1px solid
+    rgba(255, 255, 255, 0.22);
+
+  border-radius: 999px;
+
+  background:
+    rgba(5, 9, 20, 0.5);
+}
+
+.player-progress-fill {
+  height: 100%;
+
+  border-radius: 999px;
+
+  background: var(--player-accent);
+
+  box-shadow:
+    0 0 12px var(--player-accent);
+
+  transition: width 0.45s;
+}
+
+.player.has-progress .player-overlay {
+  padding-bottom: 55px;
+}
+
+/* Эффекты сцен */
+
+.effect-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.effect-fog::before,
+.effect-fog::after {
+  content: "";
+
+  position: absolute;
+  inset: -30%;
+
+  background:
+    radial-gradient(
+      ellipse at 30% 50%,
+      rgba(238, 243, 242, 0.79),
+      transparent 48%
+    ),
+    radial-gradient(
+      ellipse at 75% 40%,
+      rgba(191, 202, 201, 0.72),
+      transparent 52%
+    );
+
+  filter: blur(25px);
+
+  animation:
+    fogMove 5s ease-in-out
+    infinite alternate;
+}
+
+.effect-fog::after {
+  transform: scaleX(-1);
+  opacity: 0.65;
+  animation-duration: 7s;
+}
+
+.effect-rain {
+  background-image:
+    repeating-linear-gradient(
+      105deg,
+      transparent 0 12px,
+      rgba(189, 225, 255, 0.5) 13px 14px,
+      transparent 15px 24px
+    );
+
+  background-size: 180px 180px;
+
+  animation:
+    rainFall 0.45s linear infinite;
+
+  opacity: 0.75;
+}
+
+.effect-fire {
+  top: 45%;
+
+  background:
+    radial-gradient(
+      ellipse at 15% 110%,
+      #ffeb3b 0 6%,
+      #ff6500 18%,
+      transparent 45%
+    ),
+    radial-gradient(
+      ellipse at 50% 115%,
+      #fff176 0 5%,
+      #ff3d00 22%,
+      transparent 48%
+    ),
+    radial-gradient(
+      ellipse at 85% 110%,
+      #ffca28 0 7%,
+      #d50000 22%,
+      transparent 48%
+    );
+
+  filter: blur(4px);
+
+  animation:
+    firePulse 0.45s
+    ease-in-out infinite alternate;
+}
+
+.effect-glitch {
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 8px,
+      rgba(0, 229, 255, 0.13) 9px 10px,
+      rgba(255, 23, 68, 0.13) 11px 12px
+    );
+
+  mix-blend-mode: screen;
+
+  animation:
+    glitchLayer 0.18s
+    steps(2) infinite;
+}
+
+.player.effect-shake {
+  animation:
+    screenShake 0.55s linear infinite;
+}
+
+.intensity-low {
+  opacity: 0.4;
+}
+
+.intensity-medium {
+  opacity: 0.7;
+}
+
+.intensity-high {
+  opacity: 1;
+}
+
+@keyframes fogMove {
+  from {
+    transform:
+      translateX(-12%) scale(1);
+  }
+
+  to {
+    transform:
+      translateX(12%) scale(1.15);
+  }
+}
+
+@keyframes rainFall {
+  to {
+    background-position:
+      -45px 180px;
+  }
+}
+
+@keyframes firePulse {
+  from {
+    transform: scaleY(0.9);
+    opacity: 0.7;
+  }
+
+  to {
+    transform: scaleY(1.08);
+    opacity: 1;
+  }
+}
+
+@keyframes glitchLayer {
+  0% {
+    transform: translate(0);
+  }
+
+  25% {
+    transform: translate(5px, -2px);
+  }
+
+  50% {
+    transform: translate(-4px, 2px);
+  }
+
+  75% {
+    transform: translate(3px, 1px);
+  }
+}
+
+@keyframes screenShake {
+  0%,
+  100% {
+    transform: translate(0);
+  }
+
+  20% {
+    transform: translate(-6px, 3px);
+  }
+
+  40% {
+    transform: translate(5px, -3px);
+  }
+
+  60% {
+    transform: translate(-4px, -2px);
+  }
+
+  80% {
+    transform: translate(4px, 3px);
+  }
+}
+
+/* Полноэкранный предпросмотр */
+
 .modal {
   display: none;
 
@@ -691,7 +1076,8 @@ textarea {
   overflow-x: hidden;
   overflow-y: auto;
 
-  background: rgba(3, 7, 17, 0.94);
+  background:
+    rgba(3, 7, 17, 0.93);
 }
 
 .modal.open {
@@ -720,7 +1106,7 @@ textarea {
 }
 
 .full-player .player h3 {
-  font-size: clamp(30px, 5vw, 58px);
+  font-size: clamp(25px, 4vw, 48px);
 }
 
 .toast {
@@ -740,6 +1126,17 @@ textarea {
   font-weight: 900;
 
   transform: translateX(-50%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .effect-layer,
+  .player.effect-shake {
+    animation: none !important;
+  }
+
+  .player-progress-fill {
+    transition: none;
+  }
 }
 
 @media (max-width: 1080px) {
@@ -795,5 +1192,9 @@ textarea {
 
   .modal {
     padding-inline: 10px;
+  }
+
+  .story-card {
+    padding: 14px;
   }
 }
