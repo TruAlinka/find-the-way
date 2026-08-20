@@ -10,6 +10,16 @@
 
   <title>Interactive game</title>
 
+  <link
+    rel="preconnect"
+    href="https://fonts.googleapis.com"
+  >
+
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Roboto+Slab:wght@400;700&family=Rye&family=Special+Elite&display=swap"
+  >
+
   <style>
     * {
       box-sizing: border-box;
@@ -75,10 +85,6 @@
       justify-content: space-between;
     }
 
-    .card.has-progress .overlay {
-      padding-bottom: 76px;
-    }
-
     .shade {
       background:
         linear-gradient(
@@ -107,87 +113,185 @@
     }
 
     h1 {
-      max-width: 850px;
-      margin: 12px 0 26px;
+      margin: 10px 0 20px;
 
-      font-size: clamp(30px, 6vw, 62px);
-      line-height: 1.04;
+      font-family: var(--heading);
+
+      font-size: clamp(27px, 5vw, 54px);
+      line-height: 1.15;
     }
 
     p {
-      max-width: 760px;
-
       font-size: clamp(15px, 2vw, 20px);
       line-height: 1.55;
+    }
+
+    .story {
+      padding: clamp(18px, 4vw, 34px);
+    }
+
+    .style-none {
+      padding: 0;
+    }
+
+    .style-vintage {
+      border: 3px solid var(--border);
+      border-radius: 16px;
+
+      color: #f7e4c8;
+
+      background:
+        linear-gradient(
+          135deg,
+          rgba(20, 11, 8, 0.96),
+          rgba(35, 18, 12, 0.93)
+        );
+
+      box-shadow:
+        0 15px 40px rgba(0, 0, 0, 0.67),
+        inset 0 0 30px
+          rgba(111, 55, 26, 0.2);
+    }
+
+    .style-glass {
+      border: 1px solid
+        rgba(255, 255, 255, 0.33);
+
+      border-radius: 18px;
+
+      background:
+        rgba(255, 255, 255, 0.09);
+
+      box-shadow:
+        0 15px 40px rgba(0, 0, 0, 0.4);
+
+      backdrop-filter: blur(12px);
+    }
+
+    .style-neon {
+      border: 2px solid var(--border);
+      border-radius: 12px;
+
+      background: rgba(6, 11, 24, 0.86);
+
+      box-shadow:
+        0 0 10px var(--border),
+        inset 0 0 18px #000;
+    }
+
+    .style-parchment {
+      border: 2px solid #79552f;
+      border-radius: 4px;
+
+      color: #332414;
+      background: rgba(234, 215, 171, 0.92);
+
+      box-shadow:
+        0 12px 35px rgba(0, 0, 0, 0.53);
     }
 
     .answers {
       display: grid;
       gap: 9px;
+      margin-top: 16px;
     }
 
     .answer {
       width: 100%;
-      padding: 15px 18px;
+      padding: 14px 17px;
 
       display: flex;
       align-items: center;
       gap: 12px;
 
+      color: #fff;
+      text-align: left;
+    }
+
+    .answer-standard {
       border: 1px solid
         rgba(255, 255, 255, 0.21);
 
-      color: #fff;
       background:
         rgba(17, 24, 39, 0.77);
+    }
 
-      text-align: left;
+    .answer-vintage {
+      border: 2px solid var(--border);
+
+      color: #f7e4c8;
+      background: rgba(26, 13, 9, 0.91);
+    }
+
+    .answer-double {
+      border: 4px double var(--border);
+
+      background:
+        rgba(17, 24, 39, 0.79);
+    }
+
+    .answer-neon {
+      border: 1px solid var(--border);
+
+      background:
+        rgba(7, 16, 29, 0.9);
+
+      box-shadow:
+        0 0 7px var(--border);
+    }
+
+    .answer-dashed {
+      border: 2px dashed var(--border);
+
+      background:
+        rgba(17, 24, 39, 0.67);
+    }
+
+    .answer-text {
+      border: 0;
+      border-bottom: 1px solid var(--border);
+
+      border-radius: 0 !important;
+      background: transparent;
     }
 
     .answer:hover {
       color: #101827;
+      background: var(--accent);
     }
 
-    .transition {
-      position: absolute;
-      inset: 0;
-      z-index: 10;
-
-      background-size: cover;
-      background-position: center;
+    .shape-soft {
+      border-radius: 12px;
     }
 
-    .message {
-      padding: 20px;
-      text-align: center;
+    .shape-round {
+      border-radius: 999px;
     }
 
-    /*
-      Адаптивный прогресс-бар.
-    */
+    .shape-square {
+      border-radius: 3px;
+    }
+
+    /* Прогресс */
 
     .progress {
       position: absolute;
 
       left: clamp(20px, 5vw, 48px);
       right: clamp(20px, 5vw, 48px);
-      bottom: 20px;
+      bottom: 18px;
 
-      z-index: 8;
+      z-index: 22;
     }
 
     .progress-row {
-      margin-bottom: 7px;
-
       display: flex;
       justify-content: space-between;
 
-      color: #f5f7ff;
+      margin-bottom: 7px;
 
       font-size: 10px;
       font-weight: 900;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
 
       text-shadow: 0 1px 5px #000;
     }
@@ -203,19 +307,229 @@
 
       background:
         rgba(5, 9, 20, 0.55);
-
-      backdrop-filter: blur(5px);
     }
 
     .progress-fill {
       height: 100%;
 
       border-radius: 999px;
+      background: var(--accent);
 
       box-shadow:
-        0 0 14px currentColor;
+        0 0 14px var(--accent);
 
-      transition: width 0.5s ease;
+      transition: width 0.5s;
+    }
+
+    .has-progress .overlay {
+      padding-bottom: 76px;
+    }
+
+    /* Эффекты */
+
+    .effect {
+      position: absolute;
+      inset: 0;
+      z-index: 15;
+
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .fog::before,
+    .fog::after {
+      content: "";
+
+      position: absolute;
+      inset: -30%;
+
+      background:
+        radial-gradient(
+          ellipse at 30% 50%,
+          rgba(238, 243, 242, 0.79),
+          transparent 48%
+        ),
+        radial-gradient(
+          ellipse at 75% 40%,
+          rgba(191, 202, 201, 0.72),
+          transparent 52%
+        );
+
+      filter: blur(25px);
+
+      animation:
+        fogMove 5s ease-in-out
+        infinite alternate;
+    }
+
+    .fog::after {
+      transform: scaleX(-1);
+      opacity: 0.65;
+      animation-duration: 7s;
+    }
+
+    .rain {
+      background-image:
+        repeating-linear-gradient(
+          105deg,
+          transparent 0 12px,
+          rgba(189, 225, 255, 0.5) 13px 14px,
+          transparent 15px 24px
+        );
+
+      background-size: 180px 180px;
+
+      animation:
+        rainFall 0.45s linear infinite;
+    }
+
+    .fire {
+      top: 45%;
+
+      background:
+        radial-gradient(
+          ellipse at 15% 110%,
+          #ffeb3b 0 6%,
+          #ff6500 18%,
+          transparent 45%
+        ),
+        radial-gradient(
+          ellipse at 50% 115%,
+          #fff176 0 5%,
+          #ff3d00 22%,
+          transparent 48%
+        ),
+        radial-gradient(
+          ellipse at 85% 110%,
+          #ffca28 0 7%,
+          #d50000 22%,
+          transparent 48%
+        );
+
+      filter: blur(4px);
+
+      animation:
+        firePulse 0.45s
+        ease-in-out infinite alternate;
+    }
+
+    .glitch {
+      background:
+        repeating-linear-gradient(
+          0deg,
+          transparent 0 8px,
+          rgba(0, 229, 255, 0.13) 9px 10px,
+          rgba(255, 23, 68, 0.13) 11px 12px
+        );
+
+      mix-blend-mode: screen;
+
+      animation:
+        glitchEffect 0.18s
+        steps(2) infinite;
+    }
+
+    .shake {
+      animation:
+        shakeEffect 0.55s linear infinite;
+    }
+
+    .low {
+      opacity: 0.4;
+    }
+
+    .medium {
+      opacity: 0.7;
+    }
+
+    .high {
+      opacity: 1;
+    }
+
+    .transition {
+      position: absolute;
+      inset: 0;
+      z-index: 25;
+
+      background-size: cover;
+      background-position: center;
+    }
+
+    @keyframes fogMove {
+      from {
+        transform:
+          translateX(-12%) scale(1);
+      }
+
+      to {
+        transform:
+          translateX(12%) scale(1.15);
+      }
+    }
+
+    @keyframes rainFall {
+      to {
+        background-position:
+          -45px 180px;
+      }
+    }
+
+    @keyframes firePulse {
+      from {
+        transform: scaleY(0.9);
+      }
+
+      to {
+        transform: scaleY(1.08);
+      }
+    }
+
+    @keyframes glitchEffect {
+      0% {
+        transform: translate(0);
+      }
+
+      25% {
+        transform: translate(5px, -2px);
+      }
+
+      50% {
+        transform: translate(-4px, 2px);
+      }
+
+      75% {
+        transform: translate(3px, 1px);
+      }
+    }
+
+    @keyframes shakeEffect {
+      0%,
+      100% {
+        transform: translate(0);
+      }
+
+      20% {
+        transform: translate(-6px, 3px);
+      }
+
+      40% {
+        transform: translate(5px, -3px);
+      }
+
+      60% {
+        transform: translate(-4px, -2px);
+      }
+
+      80% {
+        transform: translate(4px, 3px);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .effect,
+      .shake {
+        animation: none !important;
+      }
     }
 
     @media (max-width: 600px) {
@@ -229,21 +543,20 @@
       }
 
       .overlay {
-        padding: 22px;
+        padding: 20px;
       }
 
-      .card.has-progress .overlay {
+      .has-progress .overlay {
         padding-bottom: 70px;
       }
 
       .progress {
-        left: 22px;
-        right: 22px;
-        bottom: 17px;
+        left: 20px;
+        right: 20px;
       }
 
-      .progress-track {
-        height: 8px;
+      .story {
+        padding: 17px;
       }
     }
   </style>
@@ -251,9 +564,7 @@
 
 <body>
   <div id="app">
-    <div class="message">
-      Loading…
-    </div>
+    Loading…
   </div>
 
   <script>
@@ -288,11 +599,11 @@
         base64 += "=";
       }
 
-      const json = decodeURIComponent(
-        escape(atob(base64))
+      return JSON.parse(
+        decodeURIComponent(
+          escape(atob(base64))
+        )
       );
-
-      return JSON.parse(json);
     }
 
     function directMediaUrl(
@@ -359,31 +670,6 @@
           return url.toString();
         }
 
-        if (
-          url.hostname === "1drv.ms" ||
-          url.hostname.includes(
-            "onedrive.live.com"
-          )
-        ) {
-          const encodedShareUrl = btoa(
-            unescape(
-              encodeURIComponent(
-                originalUrl
-              )
-            )
-          )
-            .replace(/\//g, "_")
-            .replace(/\+/g, "-")
-            .replace(/=+$/, "");
-
-          return (
-            "https://api.onedrive.com/v1.0" +
-            "/shares/u!" +
-            encodedShareUrl +
-            "/root/content"
-          );
-        }
-
         return originalUrl;
       } catch (error) {
         return originalUrl;
@@ -399,22 +685,36 @@
     } catch (error) {
       console.error(error);
 
-      app.innerHTML = `
-        <div class="message">
-          Game data could not be loaded.
-        </div>
-      `;
+      app.textContent =
+        "Game data could not be loaded.";
 
       throw error;
     }
 
-    /*
-      Для старых JSON-файлов,
-      созданных до появления прогресс-бара.
-    */
+    const themeDefaults = {
+      headingFont: "Rye",
+      bodyFont: "Courier Prime",
+      cardStyle: "vintage",
+      answerStyle: "vintage",
+      shape: "soft",
+      borderColor: "#d8ae7b",
+      showProgress: true,
+      reduceMotion: false
+    };
 
-    game.theme.showProgress =
-      game.theme.showProgress !== false;
+    game.theme = {
+      ...themeDefaults,
+      ...game.theme
+    };
+
+    game.scenes.forEach(scene => {
+      scene.atmosphere = {
+        type: "none",
+        intensity: "medium",
+        duration: 1800,
+        ...(scene.atmosphere || {})
+      };
+    });
 
     let currentSceneId =
       game.startSceneId;
@@ -422,14 +722,8 @@
     let visitedScenes =
       new Set([currentSceneId]);
 
-    document.documentElement.lang =
-      game.language || "ru";
-
     document.title =
       game.title || "Interactive game";
-
-    document.body.style.fontFamily =
-      game.theme.font;
 
     document.body.style.background =
       game.theme.transparent
@@ -441,48 +735,28 @@
         return "999px";
       }
 
-      if (
-        game.theme.shape === "square"
-      ) {
+      if (game.theme.shape === "square") {
         return "3px";
       }
 
       return "12px";
     }
 
-    function getCardBackground() {
-      return game.theme.transparent
-        ? "transparent"
-        : game.theme.background;
-    }
-
-    /*
-      Поиск кратчайшего пути
-      от сцены до финала.
-    */
-
     function getDistanceToFinish(
       startSceneId
     ) {
-      const queue = [
-        [startSceneId, 0]
-      ];
-
-      const checkedScenes = new Set();
+      const queue = [[startSceneId, 0]];
+      const checked = new Set();
 
       while (queue.length > 0) {
-        const [
-          sceneId,
-          distance
-        ] = queue.shift();
+        const [sceneId, distance] =
+          queue.shift();
 
-        if (
-          checkedScenes.has(sceneId)
-        ) {
+        if (checked.has(sceneId)) {
           continue;
         }
 
-        checkedScenes.add(sceneId);
+        checked.add(sceneId);
 
         const scene =
           game.scenes.find(
@@ -493,7 +767,7 @@
           continue;
         }
 
-        const hasFinishAnswer =
+        const hasFinish =
           scene.answers.some(
             answer =>
               answer.action === "finish" ||
@@ -501,7 +775,7 @@
                 "__finish__"
           );
 
-        if (hasFinishAnswer) {
+        if (hasFinish) {
           return distance + 1;
         }
 
@@ -509,9 +783,7 @@
           if (
             answer.action !== "finish" &&
             answer.nextSceneId &&
-            !checkedScenes.has(
-              answer.nextSceneId
-            )
+            !checked.has(answer.nextSceneId)
           ) {
             queue.push([
               answer.nextSceneId,
@@ -521,10 +793,7 @@
         });
       }
 
-      return Math.max(
-        1,
-        game.scenes.length
-      );
+      return game.scenes.length;
     }
 
     function calculateProgress(
@@ -534,33 +803,31 @@
         return 100;
       }
 
-      const completedSteps =
+      const passed =
         Math.max(
           0,
           visitedScenes.size - 1
         );
 
-      const remainingSteps =
+      if (passed === 0) {
+        return 0;
+      }
+
+      const remaining =
         getDistanceToFinish(
           currentSceneId
         );
 
-      if (completedSteps === 0) {
-        return 0;
-      }
-
-      const progress = Math.round(
-        completedSteps /
-        (
-          completedSteps +
-          remainingSteps
-        ) *
-        100
-      );
-
       return Math.max(
         5,
-        Math.min(95, progress)
+        Math.min(
+          95,
+          Math.round(
+            passed /
+            (passed + remaining) *
+            100
+          )
+        )
       );
     }
 
@@ -575,14 +842,7 @@
         calculateProgress(finished);
 
       return `
-        <div
-          class="progress"
-          role="progressbar"
-          aria-label="Progress"
-          aria-valuemin="0"
-          aria-valuemax="100"
-          aria-valuenow="${progress}"
-        >
+        <div class="progress">
           <div class="progress-row">
             <span>Progress</span>
             <span>${progress}%</span>
@@ -591,15 +851,66 @@
           <div class="progress-track">
             <div
               class="progress-fill"
-              style="
-                width:${progress}%;
-                background:${game.theme.accent};
-                color:${game.theme.accent};
-              "
+              style="width:${progress}%"
             ></div>
           </div>
         </div>
       `;
+    }
+
+    function createEffectMarkup(
+      atmosphere
+    ) {
+      if (
+        game.theme.reduceMotion ||
+        !atmosphere ||
+        atmosphere.type === "none" ||
+        atmosphere.type === "shake"
+      ) {
+        return "";
+      }
+
+      return `
+        <div
+          class="
+            effect
+            ${atmosphere.type}
+            ${atmosphere.intensity}
+          "
+        ></div>
+      `;
+    }
+
+    function applyTimedEffect(
+      card,
+      atmosphere
+    ) {
+      if (
+        game.theme.reduceMotion ||
+        !atmosphere ||
+        atmosphere.type === "none"
+      ) {
+        return;
+      }
+
+      if (atmosphere.type === "shake") {
+        card.classList.add("shake");
+      }
+
+      if (
+        Number(atmosphere.duration) > 0
+      ) {
+        setTimeout(() => {
+          const effect =
+            card.querySelector(".effect");
+
+          if (effect) {
+            effect.remove();
+          }
+
+          card.classList.remove("shake");
+        }, Number(atmosphere.duration));
+      }
     }
 
     function renderScene() {
@@ -611,9 +922,7 @@
         game.scenes[0];
 
       const sceneIndex =
-        game.scenes.findIndex(
-          item => item.id === scene.id
-        );
+        game.scenes.indexOf(scene);
 
       let backgroundImage = "";
 
@@ -637,16 +946,15 @@
           );
       }
 
-      const hasSceneMedia = Boolean(
+      const hasMedia =
         (
           scene.media.type === "image" ||
           scene.media.type === "video"
         ) &&
-        scene.media.url
-      );
+        scene.media.url;
 
       const useShade =
-        hasSceneMedia ||
+        hasMedia ||
         !game.theme.transparent;
 
       app.innerHTML = `
@@ -660,8 +968,19 @@
             }
           "
           style="
+            --accent:${game.theme.accent};
+            --border:${game.theme.borderColor};
+            --heading:'${game.theme.headingFont}';
+
+            font-family:
+              '${game.theme.bodyFont}';
+
             background-color:
-              ${getCardBackground()};
+              ${
+                game.theme.transparent
+                  ? "transparent"
+                  : game.theme.background
+              };
 
             ${
               backgroundImage
@@ -711,7 +1030,12 @@
               </span>
             </div>
 
-            <div>
+            <div
+              class="
+                story
+                style-${game.theme.cardStyle}
+              "
+            >
               <span
                 class="label"
                 style="
@@ -728,13 +1052,13 @@
               <div class="answers">
                 ${scene.answers
                   .map(
-                    (
-                      answer,
-                      answerIndex
-                    ) => `
+                    (answer, index) => `
                       <button
-                        class="answer"
-                        data-answer="${answerIndex}"
+                        class="
+                          answer
+                          answer-${game.theme.answerStyle}
+                        "
+                        data-answer="${index}"
                         style="
                           border-radius:
                             ${getButtonRadius()}
@@ -759,9 +1083,21 @@
             </div>
           </div>
 
+          ${createEffectMarkup(
+            scene.atmosphere
+          )}
+
           ${createProgressMarkup(false)}
         </section>
       `;
+
+      const card =
+        document.querySelector(".card");
+
+      applyTimedEffect(
+        card,
+        scene.atmosphere
+      );
 
       document
         .querySelectorAll(
@@ -781,22 +1117,6 @@
               playAnswer(answer);
             }
           );
-
-          button.addEventListener(
-            "mouseenter",
-            () => {
-              button.style.background =
-                game.theme.accent;
-            }
-          );
-
-          button.addEventListener(
-            "mouseleave",
-            () => {
-              button.style.background =
-                "rgba(17,24,39,.77)";
-            }
-          );
         });
     }
 
@@ -810,10 +1130,6 @@
           "image"
         );
 
-      const useShade =
-        Boolean(feedbackImage) ||
-        !game.theme.transparent;
-
       app.innerHTML = `
         <section
           class="
@@ -825,8 +1141,19 @@
             }
           "
           style="
+            --accent:${game.theme.accent};
+            --border:${game.theme.borderColor};
+            --heading:'${game.theme.headingFont}';
+
+            font-family:
+              '${game.theme.bodyFont}';
+
             background-color:
-              ${getCardBackground()};
+              ${
+                game.theme.transparent
+                  ? "transparent"
+                  : game.theme.background
+              };
 
             ${
               feedbackImage
@@ -840,12 +1167,20 @@
         >
           <div
             class="overlay ${
-              useShade ? "shade" : ""
+              feedbackImage ||
+              !game.theme.transparent
+                ? "shade"
+                : ""
             }"
           >
             <div></div>
 
-            <div>
+            <div
+              class="
+                story
+                style-${game.theme.cardStyle}
+              "
+            >
               <span
                 class="label"
                 style="
@@ -871,7 +1206,10 @@
 
               <button
                 id="restartButton"
-                class="answer"
+                class="
+                  answer
+                  answer-${game.theme.answerStyle}
+                "
                 style="
                   border-radius:
                     ${getButtonRadius()}
@@ -889,39 +1227,20 @@
         </section>
       `;
 
-      const restartButton =
-        document.querySelector(
-          "#restartButton"
+      document
+        .querySelector("#restartButton")
+        .addEventListener(
+          "click",
+          () => {
+            currentSceneId =
+              game.startSceneId;
+
+            visitedScenes =
+              new Set([currentSceneId]);
+
+            renderScene();
+          }
         );
-
-      restartButton.addEventListener(
-        "click",
-        () => {
-          currentSceneId =
-            game.startSceneId;
-
-          visitedScenes =
-            new Set([currentSceneId]);
-
-          renderScene();
-        }
-      );
-
-      restartButton.addEventListener(
-        "mouseenter",
-        () => {
-          restartButton.style.background =
-            game.theme.accent;
-        }
-      );
-
-      restartButton.addEventListener(
-        "mouseleave",
-        () => {
-          restartButton.style.background =
-            "rgba(17,24,39,.77)";
-        }
-      );
     }
 
     function openNextScene(answer) {
@@ -937,12 +1256,12 @@
         answer.nextSceneId ||
         game.startSceneId;
 
-      /*
-        Повторное посещение сцены
-        не увеличивает прогресс.
-      */
-
       visitedScenes.add(currentSceneId);
+
+      /*
+        Новая сцена отрисовывается
+        со своим атмосферным эффектом.
+      */
 
       renderScene();
     }
@@ -967,9 +1286,6 @@
         document.createElement("div");
 
       layer.className = "transition";
-
-      layer.style.backgroundColor =
-        getCardBackground();
 
       if (media.type === "image") {
         const imageUrl =
