@@ -2,12 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1"
-  >
-
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Branchway Studio</title>
 
   <link rel="stylesheet" href="styles.css">
@@ -18,7 +13,6 @@
   <header class="topbar">
     <div class="brand">
       <span class="brand-icon">✦</span>
-
       <div>
         <strong>BRANCHWAY STUDIO</strong>
         <small>Редактор образовательных игр</small>
@@ -26,37 +20,21 @@
     </div>
 
     <div class="toolbar">
-      <button id="newProjectButton">
-        Новый проект
-      </button>
-
-      <button id="saveJsonButton">
-        Скачать JSON
-      </button>
+      <button id="newProjectButton">Новый проект</button>
+      <button id="saveJsonButton">Скачать JSON</button>
 
       <label class="file-button">
         Загрузить JSON
-
-        <input
-          id="loadJsonInput"
-          type="file"
-          accept="application/json"
-        >
+        <input id="loadJsonInput" type="file" accept="application/json">
       </label>
 
-      <button id="previewButton">
-        ▶ Проверить игру
-      </button>
+      <button id="previewButton">▶ Проверить игру</button>
+      <button id="exportIframeBtn">Создать iframe</button>
     </div>
   </header>
 
   <section class="titlebar">
-    <input
-      id="gameTitle"
-      aria-label="Название игры"
-      placeholder="Название игры"
-    >
-
+    <input id="gameTitle" aria-label="Название игры" placeholder="Название игры">
     <span>● автосохранение</span>
   </section>
 
@@ -67,124 +45,60 @@
           <small>СЦЕНАРИЙ</small>
           <h2>Сцены</h2>
         </div>
-
-        <button
-          id="addSceneButton"
-          title="Добавить сцену"
-        >
-          ＋
-        </button>
+        <button id="addSceneButton" title="Добавить сцену">＋</button>
       </div>
 
-      <div
-        id="sceneList"
-        class="scene-list"
-      ></div>
+      <div id="sceneList" class="scene-list"></div>
     </aside>
 
     <section class="editor-panel">
       <div class="editor-heading">
         <div>
-          <small id="sceneNumber">
-            СЦЕНА 01
-          </small>
-
-          <h1 id="sceneHeading">
-            Сцена
-          </h1>
+          <small id="sceneNumber">СЦЕНА 01</small>
+          <h1 id="sceneHeading">Сцена</h1>
         </div>
 
         <div class="editor-actions">
-          <button id="makeStartButton">
-            ☆ Сделать стартовой
-          </button>
-
-          <button
-            id="deleteSceneButton"
-            class="danger"
-          >
-            Удалить
-          </button>
+          <button id="makeStartButton">☆ Сделать стартовой</button>
+          <button id="deleteSceneButton" class="danger">Удалить</button>
         </div>
       </div>
 
-      <label>
-        НАЗВАНИЕ СЦЕНЫ
-
+      <label>НАЗВАНИЕ СЦЕНЫ
         <input id="sceneTitle">
       </label>
 
-      <label>
-        ТИП СЦЕНЫ
-
+      <label>ТИП СЦЕНЫ
         <select id="sceneRole">
-          <option value="main">
-            Основное задание — учитывать в прогрессе
-          </option>
-
-          <option value="support">
-            Вспомогательная сцена — не учитывать
-          </option>
+          <option value="main">Основное задание — учитывать в прогрессе</option>
+          <option value="support">Вспомогательная сцена — не учитывать</option>
         </select>
       </label>
 
-      <label>
-        ЗАДАНИЕ / ВОПРОС
-
-        <textarea
-          id="sceneTask"
-          rows="4"
-        ></textarea>
+      <label>ЗАДАНИЕ / ВОПРОС
+        <textarea id="sceneTask" rows="4"></textarea>
       </label>
 
-      <label>
-        ФОТО ИЛИ ВИДЕО СЦЕНЫ
-
+      <label>ФОТО ИЛИ ВИДЕО СЦЕНЫ
         <div class="two-columns">
           <select id="sceneMediaType">
-            <option value="none">
-              Без медиа
-            </option>
-
-            <option value="image">
-              Изображение
-            </option>
-
-            <option value="video">
-              Видео
-            </option>
+            <option value="none">Без медиа</option>
+            <option value="image">Изображение</option>
+            <option value="video">Видео</option>
           </select>
-
-          <input
-            id="sceneMediaUrl"
-            placeholder="Прямая или облачная ссылка"
-          >
+          <input id="sceneMediaUrl" placeholder="Прямая или облачная ссылка">
         </div>
       </label>
 
-      <div
-        id="sceneMediaStatus"
-        class="media-status"
-      ></div>
-
-      <div
-        id="sceneMediaPreview"
-        class="media-preview"
-      ></div>
+      <div id="sceneMediaStatus" class="media-status"></div>
+      <div id="sceneMediaPreview" class="media-preview"></div>
 
       <section class="scene-effect-panel">
         <h2>Атмосфера этой сцены</h2>
-
-        <p class="hint">
-          Эффект включится при входе на эту сцену.
-          Например, неправильный ответ может вести на
-          вспомогательную сцену с туманом.
-        </p>
+        <p class="hint">Эффект включится при входе на эту сцену. Например, неправильный ответ может вести на вспомогательную сцену с туманом.</p>
 
         <div class="settings-grid">
-          <label>
-            ЭФФЕКТ
-
+          <label>ЭФФЕКТ
             <select id="sceneEffect">
               <option value="none">Нет</option>
               <option value="fog">Туман</option>
@@ -195,9 +109,7 @@
             </select>
           </label>
 
-          <label>
-            ИНТЕНСИВНОСТЬ
-
+          <label>ИНТЕНСИВНОСТЬ
             <select id="effectIntensity">
               <option value="low">Слабая</option>
               <option value="medium">Средняя</option>
@@ -205,25 +117,12 @@
             </select>
           </label>
 
-          <label class="wide">
-            ДЛИТЕЛЬНОСТЬ
-
+          <label class="wide">ДЛИТЕЛЬНОСТЬ
             <select id="effectDuration">
-              <option value="1800">
-                1,8 секунды
-              </option>
-
-              <option value="3000">
-                3 секунды
-              </option>
-
-              <option value="5000">
-                5 секунд
-              </option>
-
-              <option value="0">
-                Постоянно до ухода со сцены
-              </option>
+              <option value="1800">1,8 секунды</option>
+              <option value="3000">3 секунды</option>
+              <option value="5000">5 секунд</option>
+              <option value="0">Постоянно до ухода со сцены</option>
             </select>
           </label>
         </div>
@@ -232,56 +131,34 @@
       <div class="answers-heading">
         <div>
           <small>ВАРИАНТЫ ОТВЕТА</small>
-
-          <p>
-            Ответ ведёт к сцене или завершает игру.
-          </p>
+          <p>Ответ ведёт к сцене или завершает игру.</p>
         </div>
 
-        <button id="addAnswerButton">
-          ＋ Добавить ответ
-        </button>
+        <button id="addAnswerButton">＋ Добавить ответ</button>
       </div>
 
-      <div
-        id="answerList"
-        class="answer-list"
-      ></div>
+      <div id="answerList" class="answer-list"></div>
 
       <section class="settings-panel">
         <h2>Финальный фидбек</h2>
 
-        <p class="hint">
-          Появится после действия «Завершить игру».
-        </p>
+        <p class="hint">Появится после действия «Завершить игру».</p>
 
         <div class="settings-grid">
-          <label>
-            ЗАГОЛОВОК
-            <input id="feedbackTitle">
+          <label>ЗАГОЛОВОК
+            <input id="feedbackTitle" placeholder="Отличная работа!">
           </label>
 
-          <label>
-            КНОПКА ПОВТОРА
-            <input id="restartText">
+          <label>КНОПКА ПОВТОРА
+            <input id="restartText" placeholder="Играть снова">
           </label>
 
-          <label class="wide">
-            ТЕКСТ
-
-            <textarea
-              id="feedbackText"
-              rows="4"
-            ></textarea>
+          <label class="wide">ТЕКСТ
+            <textarea id="feedbackText" rows="4" placeholder="Вы успешно завершили игру."></textarea>
           </label>
 
-          <label class="wide">
-            ФОНОВАЯ КАРТИНКА
-
-            <input
-              id="feedbackImage"
-              placeholder="Прямая или облачная ссылка"
-            >
+          <label class="wide">ФОНОВАЯ КАРТИНКА
+            <input id="feedbackImage" placeholder="Прямая или облачная ссылка">
           </label>
         </div>
       </section>
@@ -290,195 +167,84 @@
         <h2>Оформление игры</h2>
 
         <div class="settings-grid">
-          <label>
-            ШРИФТ ЗАГОЛОВКА
-
+          <label>ШРИФТ ЗАГОЛОВКА
             <select id="headingFont">
-              <option value="Rye">
-                Rye — винтажный
-              </option>
-
-              <option value="Special Elite">
-                Special Elite
-              </option>
-
-              <option value="Roboto Slab">
-                Roboto Slab
-              </option>
-
-              <option value="Georgia">
-                Georgia
-              </option>
-
-              <option value="Arial">
-                Arial
-              </option>
+              <option value="Rye">Rye — винтажный</option>
+              <option value="Special Elite">Special Elite</option>
+              <option value="Roboto Slab">Roboto Slab</option>
+              <option value="Georgia">Georgia</option>
+              <option value="Arial">Arial</option>
             </select>
           </label>
 
-          <label>
-            ШРИФТ ТЕКСТА
-
+          <label>ШРИФТ ТЕКСТА
             <select id="bodyFont">
-              <option value="Courier Prime">
-                Courier Prime
-              </option>
-
-              <option value="Special Elite">
-                Special Elite
-              </option>
-
-              <option value="Roboto Slab">
-                Roboto Slab
-              </option>
-
-              <option value="Georgia">
-                Georgia
-              </option>
-
-              <option value="Arial">
-                Arial
-              </option>
+              <option value="Courier Prime">Courier Prime</option>
+              <option value="Special Elite">Special Elite</option>
+              <option value="Roboto Slab">Roboto Slab</option>
+              <option value="Georgia">Georgia</option>
+              <option value="Arial">Arial</option>
             </select>
           </label>
 
-          <label>
-            СТИЛЬ КАРТОЧКИ
-
+          <label>СТИЛЬ КАРТОЧКИ
             <select id="cardStyle">
-              <option value="none">
-                Без карточки
-              </option>
-
-              <option value="vintage">
-                Винтаж
-              </option>
-
-              <option value="glass">
-                Стекло
-              </option>
-
-              <option value="neon">
-                Неон
-              </option>
-
-              <option value="parchment">
-                Пергамент
-              </option>
+              <option value="none">Без карточки</option>
+              <option value="vintage">Винтаж</option>
+              <option value="glass">Стекло</option>
+              <option value="neon">Неон</option>
+              <option value="parchment">Пергамент</option>
             </select>
           </label>
 
-          <label>
-            РАМКА ОТВЕТОВ
-
+          <label>РАМКА ОТВЕТОВ
             <select id="answerStyle">
-              <option value="standard">
-                Стандартная
-              </option>
-
-              <option value="vintage">
-                Винтажная
-              </option>
-
-              <option value="double">
-                Двойная
-              </option>
-
-              <option value="neon">
-                Неоновая
-              </option>
-
-              <option value="dashed">
-                Пунктирная
-              </option>
-
-              <option value="text">
-                Только текст
-              </option>
+              <option value="standard">Стандартная</option>
+              <option value="vintage">Винтажная</option>
+              <option value="double">Двойная</option>
+              <option value="neon">Неоновая</option>
+              <option value="dashed">Пунктирная</option>
+              <option value="text">Только текст</option>
             </select>
           </label>
 
-          <label>
-            ФОРМА КНОПОК
-
+          <label>ФОРМА КНОПОК
             <select id="buttonShape">
-              <option value="soft">
-                Скруглённые
-              </option>
-
-              <option value="round">
-                Круглые
-              </option>
-
-              <option value="square">
-                Прямоугольные
-              </option>
+              <option value="soft">Скруглённые</option>
+              <option value="round">Круглые</option>
+              <option value="square">Прямоугольные</option>
             </select>
           </label>
 
-          <label>
-            ЦВЕТ РАМКИ
-
-            <input
-              id="borderColor"
-              type="color"
-            >
+          <label>ЦВЕТ РАМКИ
+            <input id="borderColor" type="color">
           </label>
 
-          <label>
-            ЦВЕТ ФОНА
-
-            <input
-              id="backgroundColor"
-              type="color"
-            >
+          <label>ЦВЕТ ФОНА
+            <input id="backgroundColor" type="color">
           </label>
 
-          <label>
-            ЦВЕТ АКЦЕНТА
-
-            <input
-              id="accentColor"
-              type="color"
-            >
+          <label>ЦВЕТ АКЦЕНТА
+            <input id="accentColor" type="color">
           </label>
 
-          <label class="wide">
-            ОБЩАЯ ФОНОВАЯ КАРТИНКА
-
-            <input
-              id="backgroundImage"
-              placeholder="Прямая или облачная ссылка"
-            >
+          <label class="wide">ОБЩАЯ ФОНОВАЯ КАРТИНКА
+            <input id="backgroundImage" placeholder="Прямая или облачная ссылка">
           </label>
 
           <label class="checkbox-label wide">
-            <input
-              id="transparentBackground"
-              type="checkbox"
-            >
-
+            <input id="transparentBackground" type="checkbox">
             <span>Прозрачный фон игры</span>
           </label>
 
           <label class="checkbox-label wide">
-            <input
-              id="showProgressBar"
-              type="checkbox"
-            >
-
+            <input id="showProgressBar" type="checkbox" checked>
             <span>Показывать прогресс-бар</span>
           </label>
 
           <label class="checkbox-label wide">
-            <input
-              id="reduceMotion"
-              type="checkbox"
-            >
-
-            <span>
-              Уменьшить анимации и эффекты
-            </span>
+            <input id="reduceMotion" type="checkbox">
+            <span>Уменьшить анимации и эффекты</span>
           </label>
         </div>
       </section>
@@ -486,39 +252,17 @@
       <section class="settings-panel iframe-panel">
         <h2>Вставка в Genially</h2>
 
-        <p class="hint">
-          После публикации четырёх файлов на GitHub Pages
-          создайте iframe.
-        </p>
+        <p class="hint">После публикации четырёх файлов на GitHub Pages создайте iframe.</p>
 
         <div class="iframe-actions">
-          <button
-            id="generateIframeButton"
-            class="primary"
-          >
-            Создать iframe
-          </button>
-
-          <button id="copyIframeButton">
-            Копировать
-          </button>
-
-          <button id="openPlayerButton">
-            Открыть игру
-          </button>
+          <button id="generateIframeButton" class="primary">Создать iframe</button>
+          <button id="copyIframeButton">Копировать</button>
+          <button id="openPlayerButton">Открыть игру</button>
         </div>
 
-        <textarea
-          id="iframeCode"
-          rows="7"
-          readonly
-          placeholder="Готовый код появится здесь"
-        ></textarea>
+        <textarea id="iframeCode" rows="7" readonly placeholder="Готовый код появится здесь"></textarea>
 
-        <div
-          id="iframeStatus"
-          class="media-status"
-        ></div>
+        <div id="iframeStatus" class="media-status"></div>
       </section>
     </section>
 
@@ -530,28 +274,11 @@
     </aside>
   </main>
 
-  <div
-    id="previewModal"
-    class="modal"
-    aria-hidden="true"
-  >
-    <button
-      id="closePreviewButton"
-      class="close-button"
-    >
-      ← Вернуться в редактор
-    </button>
-
-    <div
-      id="fullPlayer"
-      class="full-player"
-    ></div>
+  <div id="previewModal" class="modal" aria-hidden="true">
+    <button id="closePreviewButton" class="close-button">← Вернуться в редактор</button>
+    <div id="fullPlayer" class="full-player"></div>
   </div>
 
-  <div
-    id="toast"
-    class="toast"
-    hidden
-  ></div>
+  <div id="toast" class="toast" hidden></div>
 </body>
 </html>
