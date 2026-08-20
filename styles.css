@@ -1,90 +1,54 @@
-/* Общие стили редактора, прогресс-бар и пометки сцены */
 @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Roboto+Slab:wght@400;700&family=Rye&family=Special+Elite&display=swap');
+:root{--page:#090f1e;--panel:#111a31;--dark:#0d1529;--line:rgba(255,255,255,.1);--text:#f5f7ff;--muted:#7f8ba7;--accent:#9bf6b0;}
 
-:root {
-  --page: #090f1e;
-  --panel: #111a31;
-  --dark: #0d1529;
-  --line: rgba(255, 255, 255, 0.1);
-  --text: #f5f7ff;
-  --muted: #7f8ba7;
-  --accent: #9bf6b0;
-}
+/* общие стили */
+*{box-sizing:border-box}html,body{margin:0;padding:0}html{min-height:100%;font-family:Arial,sans-serif}
+body{color:var(--text);background:radial-gradient(circle at 75% 0, #273963, transparent 36%), var(--page);min-height:100vh}
 
-* { box-sizing: border-box; }
+/* верхнее меню */
+.topbar{position:sticky;top:0;z-index:30;display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:rgba(9,16,30,.92);border-bottom:1px solid var(--line)}
+.brand{display:flex;gap:10px;align-items:center}
+.brand-icon{width:34px;height:34px;display:grid;place-items:center;border-radius:6px;background:var(--accent)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap}
+.file-button{position:relative;overflow:hidden}
+.file-button input{position:absolute;inset:0;opacity:0}
+.titlebar{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.titlebar input{width:520px;padding:8px;border:0;background:transparent;color:#fff;font-weight:800}
+.titlebar span{color:var(--muted);font-size:12px}
 
-html { min-height: 100%; overflow-y: scroll; scroll-behavior: smooth; }
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100%;
+/* рабочая область */
+.workspace{width:100%;max-width:1400px;margin:0 auto;display:grid;grid-template-columns:260px 1fr 360px;gap:16px;padding:20px;min-height:60vh}
+.scenes-panel{background:#0f1527;border-right:1px solid var(--line);padding:18px}
+.scene-list{display:grid;gap:6px;max-height:60vh;overflow:auto}
+.scene-card{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;padding:8px 10px;border-radius:6px;background:transparent;border:1px solid transparent}
+.scene-card.active{border-color:rgba(155,246,176,.4);background:rgba(155,246,176,.08)}
+.scene-card .number{color:var(--accent);font-size:10px}
+.scene-role-badge{font-size:9px;padding:2px 6px;border-radius:6px;margin-left:6px;font-weight:900;text-transform:uppercase}
+.editor-panel{background:#10172b;padding:20px 24px}
+.editor-heading{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:12px}
+.editor-heading h1{font-size:20px;margin:0}
+.label{font-size:12px;font-weight:700;color:#cbd7f3}
+input,textarea,select{width:100%;padding:10px;border:1px solid var(--line);border-radius:6px;background:#0d1320;color:#fff}
+textarea{resize:vertical}
+.scene-media{margin-top:8px}
+.media-status{font-size:11px;color:var(--muted);margin-top:6px}
+.media-preview img,.media-preview video{width:100%;max-height:260px;border-radius:8px;margin-top:6px}
 
-  overflow-x: hidden;
-  overflow-y: auto;
+/* прогрессбар внутри клипки редактора (настраиваемый) */
+.player-progress{position:relative;left:0;right:0;margin:12px 0 0}
+.player-progress-row{display:flex;justify-content:space-between;font-size:10px;font-weight:900}
+.player-progress-track{height:7px;background:rgba(255,255,255,.25);border-radius:999px;overflow:hidden}
+.player-progress-fill{height:100%;width:0%;background:var(--accent);transition:width .4s}
 
-  color: var(--text);
+/* карточки вариантов и оформление */
+.answer-card{padding:12px;border:1px solid var(--line);border-radius:8px;background:rgba(255,255,255,.04)}
+.wide{grid-column:1 / -1}
 
-  background: radial-gradient(circle at 75% 0, #273963, transparent 36%), var(--page);
-  font-family: Arial, sans-serif;
-}
+/* iframe */
+.iframe-panel{margin-top:18px}
+.preview-panel{padding:18px;border-left:1px solid var(--line);}
 
-button, input, textarea, select { font: inherit; }
-
-.topbar { position: sticky; top: 0; z-index: 30; display: flex; align-items: center; justify-content: space-between;
-  min-height: 76px; padding: 14px 24px; border-bottom: 1px solid var(--line);
-  background: rgba(9,16,30,0.92); backdrop-filter: blur(12px); }
-
-.brand { display: flex; align-items: center; gap: 11px; }
-.brand-icon { width: 35px; height: 35px; display: grid; place-items: center; border-radius: 8px; background: var(--accent); color: #101827; }
-.brand strong { font-size: 13px; }
-.brand small { font-size: 10px; color: var(--muted); }
-
-.titlebar { padding: 16px 27px; display:flex; align-items:center; justify-content: space-between; border-bottom:1px solid var(--line); }
-.titlebar input { width: 520px; padding: 6px 10px; border:0; outline:0; color:#fff; background:transparent; font-size:20px; font-weight:800; }
-
-.workspace { width: min(1500px,100%); margin: 0 auto; display:grid; grid-template-columns: 240px 1fr 320px; gap: 16px; padding: 18px; min-height: calc(100vh - 140px); }
-
-.scenes-panel { background:#0f1527; border-right:1px solid var(--line); padding: 22px 12px; }
-.scenes-panel .section-heading { display:flex; justify-content: space-between; align-items:center; }
-
-.scene-list { display: grid; gap:6px; padding: 0; max-height:60vh; overflow:auto; }
-.scene-card { display:grid; grid-template-columns: 22px 1fr auto; align-items:center; padding:8px; border-radius:8px; border:1px solid transparent; background:transparent; color:#e6eaff; }
-.scene-card.active { border-color: rgba(155,246,176,.4); background: rgba(155,246,176,.08); }
-.scene-card .number { color: var(--accent); font-size:10px; }
-
-.scene-role-badge { display:inline-block; padding:2px 6px; font-size:8px; font-weight:900; border-radius:4px; margin-left:6px; text-transform:uppercase; }
-.scene-role-main { background: rgba(155,246,176,.25); color:#dff7e5; }
-.scene-role-support { background: rgba(255,209,139,.25); color:#fff; }
-
-.editor-panel { padding: 24px 28px; overflow: hidden; background: #10172b; min-height: 60vh; }
-.editor-heading { display:flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom:1px solid var(--line); margin-bottom:14px; }
-.sceneMediaStatus, .media-status { min-height: 17px; color: var(--muted); font-size: 10px; }
-.media-preview img, .media-preview video { width: 100%; max-height: 260px; border-radius: 8px; }
-
-.answers { display: grid; gap: 8px; margin-top: 8px; }
-
-.answer-card { padding: 12px; border:1px solid var(--line); border-radius:8px; background: rgba(255,255,255,.04); }
-
-.answer-card .label { font-size: 11px; font-weight: 900; color: var(--muted); display:block; }
-
-.answers-heading { display:flex; align-items:center; justify-content: space-between; margin: 22px 0 8px; }
-
-.progress { }
-
-.player-progress { position: absolute; left: 16px; right: 16px; bottom: 12px; z-index: 22; padding: 6px; }
-
-.player-progress-row { display:flex; justify-content:space-between; font-size: 9px; font-weight: 900; color:#eef2ff; }
-.player-progress-track { height: 7px; border-radius:999px; background: rgba(255,255,255,.2); overflow:hidden; }
-.player-progress-fill { height:100%; width:0%; background: var(--accent); transition: width .5s; }
-
-.modal, .full-player { }
-.modal { display:none; position:fixed; inset:0; background: rgba(0,0,0,.8); z-index:40; }
-.modal.open { display:block; }
-
-/* Поиск паттернов — inline примерные варианты, можно расширять по необходимости */
-@media (max-width: 900px) {
-  .workspace { grid-template-columns: 1fr; }
-  .scenes-panel { order: 1; }
-  .editor-panel { order: 2; }
-  .preview-panel { display: none; }
+@media (max-width: 900px){
+  .workspace{grid-template-columns:1fr}
+  .preview-panel{display:none}
 }
