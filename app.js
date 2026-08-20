@@ -1,12 +1,10 @@
 "use strict";
 
 /*
-  Версия редактора v9 с базовыми доработками:
-  - пометка сцен: main / support
-  - прогресс считается только по основным сценам
-  - прокрутка редактора и сохранение
-  - iframe-генерация и чистый предпросмотр
-  - прозрачный фон и настройка прогресс-бара
+  Версия редактора v9 (рабочая исходная база).
+  Здесь сохранены базовые функции: предпросмотр, iframe, экспорт,
+  прозрачный фон, прогресс по основным задачам и т.д.
+  Новые доработки можно аккуратно добавлять по шагам.
 */
 
 const STORAGE_KEY = "branchway-editor-v9-full";
@@ -70,7 +68,6 @@ function createDefaultProject(){
   };
 }
 
-/* Нормализация проекта */
 function normalizeProject(p){
   const d = createDefaultProject();
   if(!p || !Array.isArray(p.scenes) || p.scenes.length === 0){
@@ -163,10 +160,8 @@ const els = {
   openPlayerButton: el("openPlayerButton"),
 };
 
-// Состояния
+// Прогресс по основным сценам
 let lastMainIndex = -1;
-
-/* Progress по основным сценам */
 function getMainScenes(){
   return project.scenes.filter(s => s.role !== "support");
 }
@@ -202,7 +197,7 @@ function progressHTML(){
   `;
 }
 
-/* Рендер редактора (полная версия) */
+/* Рендер редактора (упрощённо) */
 function renderEditor(){
   const scene = project.scenes.find(s => s.id === activeSceneId) || project.scenes[0];
   ensureVisitedMain(scene);
@@ -213,7 +208,7 @@ function renderEditor(){
   const displayIndex = (scene.role !== "support" && mainIndex >= 0) ? mainIndex + 1 : (lastMainIndex >= 0 ? lastMainIndex + 1 : 1);
   if (els.sceneNumber) els.sceneNumber.textContent = `СЦЕНА ${String(displayIndex).padStart(2, '0')}`;
 
-  // заголовок
+  // заполнение полей
   if (els.gameTitle) els.gameTitle.value = project.title;
   if (els.sceneTitle) els.sceneTitle.value = scene.title;
   if (els.sceneTask) els.sceneTask.value = scene.task;
@@ -240,9 +235,12 @@ function renderEditor(){
   if (els.transparentBackground) els.transparentBackground.checked = !!project.theme.transparent;
   if (els.showProgressBar) els.showProgressBar.checked = !!project.theme.showProgress;
   if (els.reduceMotion) els.reduceMotion.checked = !!project.theme.reduceMotion;
-  if (els.sceneMediaStatus) els.sceneMediaStatus.textContent = "";
 
-  // Привязка движений к элементам (пример — можно расширить)
+  // scene role UI
+  if (els.sceneRole) els.sceneRole.value = scene.role;
+
+  // прогресс-подсказка
+  // (прогресс рассчитывается на проигрывателе)
 }
 
 // Сохранение и загрузка
@@ -259,7 +257,6 @@ function loadProject(){
   }
 }
 function normalize(p){
-  // совместимо
   return p;
 }
 function exportIframe(){
@@ -271,11 +268,9 @@ function exportIframe(){
 
 // Инициализация
 (function init(){
-  // загрузка
   project = loadProject();
   activeSceneId = project.startSceneId;
 
-  // базовые элементы
   renderEditor();
   renderSceneList();
 
@@ -285,7 +280,8 @@ function exportIframe(){
     const s = { id: uid("scene"), title: "Новая сцена", task: "Введите задание.", media: { type:"none", url:"" }, role: "main", atmosphere: { type:"none", intensity:"medium", duration:1800 }, answers: [{ id: uid("answer"), text: "Продолжить", icon: "→", action:"scene", nextSceneId: project.startSceneId, transition: { type:"none", url:"" } }] };
     project.scenes.push(s);
     activeSceneId = s.id;
-    renderEditor(); renderSceneList();
+    renderEditor();
+    renderSceneList();
   });
 
   const delBtn = document.getElementById("deleteSceneButton");
@@ -294,7 +290,8 @@ function exportIframe(){
     const id = activeSceneId;
     project.scenes = project.scenes.filter(sc => sc.id !== id);
     activeSceneId = project.scenes[0].id;
-    renderEditor(); renderSceneList();
+    renderEditor();
+    renderSceneList();
   });
 
   const roleEl = document.getElementById("sceneRole");
@@ -326,7 +323,7 @@ function exportIframe(){
       const r = new FileReader();
       r.onload = () => {
         try {
-          project = loadProject(); // простая замена
+          project = normalizeProject(JSON.parse(r.result));
           activeSceneId = project.startSceneId;
           renderEditor();
           renderSceneList();
@@ -344,14 +341,15 @@ function exportIframe(){
   const previewBtn = document.getElementById("previewButton");
   if (previewBtn){
     previewBtn.addEventListener("click", () => {
+      // простой предпросмотр: можно заменить на модальный просмотр
       const scene = project.scenes.find(s => s.id === activeSceneId) || project.scenes[0];
-      // простейший предпросмотр в том же окне
-      alert("Предпросмотр: переключитесь в соседний контекст браузера, чтобы увидеть изменения в проигрывателе.");
+      alert("Предпросмотр: откройте iframe из Genially, чтобы увидеть полную версию.");
     });
   }
+
   // сохранить
   window.addEventListener("beforeunload", () => saveProject());
 
-  // первые шаги
+  // старт
   renderEditor();
 })();
