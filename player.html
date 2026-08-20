@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Interactive game</title>
   <style>
+    * { box-sizing: border-box; }
     html, body { margin:0; min-height:100%; background:transparent; }
     #app { min-height:100vh; display:grid; place-items:center; padding:12px; }
     .card { width:100%; min-height:100vh; position:relative; overflow:hidden; border-radius:18px; background-size:cover; background-position:center; }
@@ -28,52 +29,62 @@
   <script>
     "use strict";
 
-    function escapeHtml(v){ return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])); }
+    function escapeHtml(v){ return String(v||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c)); }
 
-    // decode data
+    // decode
     function decode(hash){
       const b = hash.replace(/-/g,'+').replace(/_/g,'/');
       const json = decodeURIComponent(escape(atob(b)));
       return JSON.parse(json);
     }
 
-    const raw = location.hash.substring(1);
-    if(!raw){
+    const data = location.hash.substring(1);
+    if(!data){
       document.getElementById('app').innerHTML = '<div class="message">Нет данных игры.</div>';
     } else {
-      const game = decode(raw);
+      const game = decode(data);
       const mains = (game.scenes||[]).filter(s => s.role !== 'support');
       let currentSceneId = game.startSceneId;
-      const renderScene = (scene) => {
+      const startScene = (game.scenes||[]).find(s => s.id === currentSceneId) || (game.scenes||[])[0];
+
+      function renderScene(scene){
         const idx = mains.findIndex(m => m.id === scene.id);
         const displayIndex = idx >= 0 ? idx + 1 : 1;
-        const total = mains.length || 1;
-        const percent = (total <= 1) ? 100 : Math.round((idx>=0 ? idx : 0) / (total - 1) * 100);
-        const img = (scene.media && scene.media.url) ? scene.media.url : '';
-        const html =
-          `<section class="card" style="background-color:${game.theme.background};${img?' background-image:url(\"'+img+'\")':''}">
-            ${scene.media && scene.media.url && scene.media.type==='video' ? `<video class="video" src="${scene.media.url}" autoplay muted loop playsinline></video>`:''}
-            <div class="overlay ${scene.media && scene.media.type==='image' ? 'shade' : ''}">
-              <div class="top"><span>${escapeHtml(game.title)}</span><span>${displayIndex} / ${total}</span></div>
-              <div><span class="label" style="color:${game.theme.accent}">${escapeHtml(scene.title)}</span><h1>${escapeHtml(scene.task)}</h1>
-              <div class="answers">${scene.answers.map((a,i)=>`<button class="answer" data-i="${i}"><span>${escapeHtml(a.icon)}</span> ${escapeHtml(a.text)}</button>`).join('')}</div></div>
+        const totalMain = mains.length || 1;
+        const percent = totalMain <= 1 ? 100 : Math.round((idx >= 0 ? idx : 0) / (totalMain - 1) * 100);
+        const img = (scene.media.type === 'image' && scene.media.url) ? scene.media.url : '';
+        const bg = game.theme.background;
+        const html = `
+          <section class="card" style="background-color:${bg};${img ? ` background-image:url('${img}')` : ''}">
+            ${scene.media.type === 'video' ? `<video class="video" src="${scene.media.url}" autoplay muted loop playsinline></video>` : ''}
+            <div class="overlay ${scene.media.type === 'image' ? 'shade' : ''}">
+              <div class="top">
+                <span>${escapeHtml(game.title)}</span>
+                <span>${displayIndex} / ${totalMain}</span>
+              </div>
+              <div>
+                <span class="label" style="color:${game.theme.accent}">${escapeHtml(scene.title)}</span>
+                <h1>${escapeHtml(scene.task)}</h1>
+                <div class="answers">
+                  ${scene.answers.map((a,i)=>`<button class="answer" data-i="${i}"><span>${escapeHtml(a.icon)}</span> ${escapeHtml(a.text)}</button>`).join('')}
+                </div>
+              </div>
             </div>
           </section>`;
         document.getElementById('app').innerHTML = html;
 
         document.querySelectorAll('.answer').forEach(btn=>{
-          btn.addEventListener('click', () => {
+          btn.addEventListener('click', ()=> {
             const i = Number(btn.getAttribute('data-i'));
             const answer = scene.answers[i];
-            if (answer && answer.nextSceneId){
+            if(answer && answer.nextSceneId){
               currentSceneId = answer.nextSceneId;
               const next = game.scenes.find(s => s.id === currentSceneId);
-              if (next) renderScene(next);
+              if(next) renderScene(next);
             }
           });
         });
 
-        // прогресс внизу
         const progHtml = `
           <div class="progress" aria-label="Progress" role="progressbar" aria-valuenow="${percent}" aria-valuemin="0" aria-valuemax="100">
             <div class="progress-row"><span>Progress</span><span>${percent}%</span></div>
@@ -82,11 +93,9 @@
         `;
         const overlay = document.querySelector('.overlay');
         if (overlay) overlay.insertAdjacentHTML('beforeend', progHtml);
-      };
+      }
 
-      // стартовая сцена
-      const start = game.scenes.find(s => s.id === currentSceneId) || game.scenes[0];
-      renderScene(start);
+      renderScene(startScene);
     }
   </script>
 </body>
