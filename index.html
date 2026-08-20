@@ -110,7 +110,22 @@
 
       <label>
         НАЗВАНИЕ СЦЕНЫ
+
         <input id="sceneTitle">
+      </label>
+
+      <label>
+        ТИП СЦЕНЫ
+
+        <select id="sceneRole">
+          <option value="main">
+            Основное задание — учитывать в прогрессе
+          </option>
+
+          <option value="support">
+            Вспомогательная сцена — не учитывать
+          </option>
+        </select>
       </label>
 
       <label>
@@ -162,8 +177,8 @@
 
         <p class="hint">
           Эффект включится при входе на эту сцену.
-          Например, направьте неверный ответ на отдельную
-          сцену с туманом.
+          Например, неправильный ответ может вести на
+          вспомогательную сцену с туманом.
         </p>
 
         <div class="settings-grid">
@@ -194,9 +209,17 @@
             ДЛИТЕЛЬНОСТЬ
 
             <select id="effectDuration">
-              <option value="1800">1,8 секунды</option>
-              <option value="3000">3 секунды</option>
-              <option value="5000">5 секунд</option>
+              <option value="1800">
+                1,8 секунды
+              </option>
+
+              <option value="3000">
+                3 секунды
+              </option>
+
+              <option value="5000">
+                5 секунд
+              </option>
 
               <option value="0">
                 Постоянно до ухода со сцены
