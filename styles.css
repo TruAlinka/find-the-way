@@ -259,6 +259,7 @@ label {
   width: 100%;
 
   display: grid;
+
   grid-template-columns:
     25px
     minmax(0, 1fr)
@@ -301,6 +302,30 @@ label {
 
   color: var(--muted);
   font-size: 9px;
+}
+
+.scene-role-badge {
+  display: inline-block;
+  margin-top: 5px;
+  padding: 2px 5px;
+
+  border-radius: 4px;
+
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.scene-role-main {
+  color: #9bf6b0;
+  background: rgba(155, 246, 176, 0.09);
+}
+
+.scene-role-support {
+  color: #ffd18b;
+  background: rgba(255, 209, 139, 0.09);
 }
 
 .editor-panel {
@@ -360,6 +385,7 @@ textarea {
 
 .two-columns {
   display: grid;
+
   grid-template-columns:
     140px
     minmax(0, 1fr);
@@ -448,6 +474,7 @@ textarea {
 
 .answer-grid {
   display: grid;
+
   grid-template-columns:
     70px
     minmax(0, 1fr);
@@ -457,6 +484,7 @@ textarea {
 
 .transition-grid {
   display: grid;
+
   grid-template-columns:
     150px
     minmax(0, 1fr);
@@ -482,8 +510,11 @@ textarea {
 .scene-effect-panel {
   margin: 5px 0 28px;
 
-  border-color: rgba(155, 246, 176, 0.21);
-  background: rgba(155, 246, 176, 0.03);
+  border-color:
+    rgba(155, 246, 176, 0.21);
+
+  background:
+    rgba(155, 246, 176, 0.03);
 }
 
 .settings-panel h2,
@@ -550,7 +581,9 @@ textarea {
 .iframe-panel textarea {
   min-height: 145px;
 
-  font-family: "Courier New", monospace;
+  font-family:
+    "Courier New", monospace;
+
   font-size: 10px;
 }
 
@@ -558,11 +591,14 @@ textarea {
   margin-top: 6px;
 }
 
-/* Проигрыватель */
+/* Игровая карточка */
 
 .player {
   position: relative;
+
+  height: clamp(480px, 72vh, 760px);
   min-height: 480px;
+
   overflow: hidden;
 
   border: 1px solid var(--line);
@@ -596,14 +632,32 @@ textarea {
   object-fit: cover;
 }
 
+/*
+  Внутренняя прокрутка длинного задания.
+  Прогресс остаётся закреплённым снаружи.
+*/
+
 .player-overlay {
   position: absolute;
   inset: 0;
+
   padding: 18px;
 
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+
+  scrollbar-width: thin;
+
+  scrollbar-color:
+    var(--player-accent, var(--accent))
+    rgba(5, 9, 20, 0.45);
 
   background:
     linear-gradient(
@@ -613,9 +667,48 @@ textarea {
     );
 }
 
+.player-overlay::-webkit-scrollbar {
+  width: 8px;
+}
+
+.player-overlay::-webkit-scrollbar-track {
+  background:
+    rgba(5, 9, 20, 0.45);
+}
+
+.player-overlay::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+
+  background:
+    var(--player-accent, var(--accent));
+}
+
+.player.has-progress .player-overlay {
+  padding-bottom: 92px;
+}
+
 .player.transparent:not(.has-media)
 .player-overlay {
   background: transparent;
+}
+
+.player-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+
+  flex: 0 0 auto;
+
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.story-card {
+  flex: 0 0 auto;
+  margin-top: auto;
+  padding: 18px;
 }
 
 .player h3 {
@@ -628,17 +721,6 @@ textarea {
   line-height: 1.16;
 }
 
-.player-top {
-  display: flex;
-  justify-content: space-between;
-  gap: 15px;
-
-  font-size: 8px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .scene-label {
   color:
     var(--player-accent, var(--accent));
@@ -649,11 +731,7 @@ textarea {
   text-transform: uppercase;
 }
 
-/* Карточки */
-
-.story-card {
-  padding: 18px;
-}
+/* Стили карточки */
 
 .card-none {
   padding: 0;
@@ -714,10 +792,12 @@ textarea {
   border-radius: 4px;
 
   color: #332414;
-  background: rgba(234, 215, 171, 0.92);
+  background:
+    rgba(234, 215, 171, 0.92);
 
   box-shadow:
-    0 12px 35px rgba(0, 0, 0, 0.53);
+    0 12px 35px
+      rgba(0, 0, 0, 0.53);
 }
 
 /* Ответы */
@@ -753,7 +833,8 @@ textarea {
     var(--border-color, #d8ae7b);
 
   color: #f7e4c8;
-  background: rgba(26, 13, 9, 0.91);
+  background:
+    rgba(26, 13, 9, 0.91);
 }
 
 .answer-double {
@@ -822,7 +903,16 @@ textarea {
   right: 18px;
   bottom: 14px;
 
-  z-index: 22;
+  z-index: 24;
+
+  padding-top: 13px;
+
+  background:
+    linear-gradient(
+      180deg,
+      transparent,
+      rgba(7, 16, 29, 0.87) 32%
+    );
 }
 
 .player-progress-row {
@@ -855,16 +945,14 @@ textarea {
 
   border-radius: 999px;
 
-  background: var(--player-accent);
+  background:
+    var(--player-accent);
 
   box-shadow:
-    0 0 12px var(--player-accent);
+    0 0 12px
+      var(--player-accent);
 
   transition: width 0.45s;
-}
-
-.player.has-progress .player-overlay {
-  padding-bottom: 55px;
 }
 
 /* Эффекты сцен */
@@ -975,7 +1063,8 @@ textarea {
 
 .player.effect-shake {
   animation:
-    screenShake 0.55s linear infinite;
+    screenShake 0.55s
+    linear infinite;
 }
 
 .intensity-low {
@@ -1062,7 +1151,7 @@ textarea {
   }
 }
 
-/* Полноэкранный предпросмотр */
+/* Полноэкранный просмотр */
 
 .modal {
   display: none;
@@ -1102,7 +1191,9 @@ textarea {
 }
 
 .full-player .player {
-  min-height: calc(100vh - 110px);
+  height: calc(100dvh - 110px);
+  min-height: 420px;
+  max-height: 900px;
 }
 
 .full-player .player h3 {
@@ -1116,7 +1207,6 @@ textarea {
   z-index: 100;
 
   padding: 10px 16px;
-
   border-radius: 999px;
 
   color: #101827;
@@ -1192,6 +1282,20 @@ textarea {
 
   .modal {
     padding-inline: 10px;
+  }
+
+  .player {
+    height: 78vh;
+    min-height: 440px;
+  }
+
+  .full-player .player {
+    height: calc(100dvh - 90px);
+  }
+
+  .player.has-progress
+  .player-overlay {
+    padding-bottom: 86px;
   }
 
   .story-card {
